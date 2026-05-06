@@ -1,0 +1,8 @@
+=== Consultant Report ===
+Building: Two-story unreinforced masonry (URM) with basement in FEMA AE Zone
+Selected Strategy: Interior Elevation
+Selected Genes: protection_height=0.50 m, visual_impact_factor=0.40
+Selected Objectives: Structural=85.0, Preservation=80.0, Utility=95.0
+No-Measure Baseline: Structural=0.0, Preservation=20.0, Utility=5.0
+Trade-off Rationale: We selected Strategy 3 because although Strategy Dry Floodproofing (Sealant/Coating) blocked more water, it violated NPS Standard 9 by risking masonry damage. The chosen option better balances life safety with reversible, fabric-respecting adaptation.
+

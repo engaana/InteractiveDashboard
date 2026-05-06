@@ -1,0 +1,1320 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Flood Resilience Optimization — Interactive Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #0b1120;
+            --bg2: #111827;
+            --card: rgba(17, 24, 39, 0.72);
+            --glass: rgba(30, 41, 59, 0.45);
+            --border: rgba(100, 116, 139, 0.22);
+            --ink: #e2e8f0;
+            --muted: #94a3b8;
+            --dim: #475569;
+            --accent: #38bdf8;
+            --accent2: #818cf8;
+            --green: #34d399;
+            --red: #f87171;
+            --amber: #fbbf24;
+            --cyan: #22d3ee;
+            --s0: #f87171;
+            --s1: #38bdf8;
+            --s2: #34d399;
+            --radius: 14px;
+            --glow: 0 0 30px rgba(56, 189, 248, 0.12)
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+            overflow-x: hidden
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 25% 15%, rgba(56, 189, 248, 0.05) 0%, transparent 55%), radial-gradient(ellipse at 75% 85%, rgba(129, 140, 248, 0.04) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0
+        }
+
+        .wrap {
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 16px 20px;
+            position: relative;
+            z-index: 1
+        }
+
+        .card {
+            background: var(--card);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            box-shadow: var(--glow);
+            transition: box-shadow .2s
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text
+        }
+
+        h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 7px
+        }
+
+        h2::before {
+            content: '';
+            width: 3px;
+            height: 18px;
+            background: linear-gradient(180deg, var(--accent), var(--accent2));
+            border-radius: 3px
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.12);
+            color: var(--accent);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            border: 1px solid rgba(56, 189, 248, 0.18)
+        }
+
+        .sub {
+            color: var(--muted);
+            font-size: .8rem;
+            line-height: 1.5
+        }
+
+        /* Controls */
+        .ctrl-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(11, 17, 32, 0.88);
+            backdrop-filter: blur(22px);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 0
+        }
+
+        .ctrl-inner {
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 20px;
+            align-items: end
+        }
+
+        .ctrl-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 14px;
+            align-items: end;
+            padding: 4px 0
+        }
+
+        .ctrl-section-title {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            width: 100%;
+            margin-bottom: 2px
+        }
+
+        .cg {
+            display: flex;
+            flex-direction: column;
+            gap: 1px
+        }
+
+        .cg label {
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--dim);
+            text-transform: uppercase;
+            letter-spacing: .06em
+        }
+
+        .cg .sw {
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .cg input[type=range] {
+            -webkit-appearance: none;
+            width: 100px;
+            height: 5px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            outline: none;
+            cursor: pointer
+        }
+
+        .cg input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 6px rgba(56, 189, 248, 0.4);
+            cursor: pointer
+        }
+
+        .sv {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 40px;
+            text-align: right;
+            font-variant-numeric: tabular-nums
+        }
+
+        .toggle {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            cursor: pointer
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0
+        }
+
+        .toggle span {
+            position: absolute;
+            inset: 0;
+            background: var(--dim);
+            border-radius: 20px;
+            transition: .2s
+        }
+
+        .toggle span::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            left: 2px;
+            top: 2px;
+            background: #fff;
+            border-radius: 50%;
+            transition: .2s
+        }
+
+        .toggle input:checked+span {
+            background: var(--accent)
+        }
+
+        .toggle input:checked+span::before {
+            transform: translateX(16px)
+        }
+
+        .tgl-label {
+            font-size: 10px;
+            color: var(--muted);
+            font-weight: 600
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 14px
+        }
+
+        .g4 {
+            grid-template-columns: repeat(4, 1fr)
+        }
+
+        .g3 {
+            grid-template-columns: repeat(3, 1fr)
+        }
+
+        .g2 {
+            grid-template-columns: 1fr 1fr
+        }
+
+        .g2b {
+            grid-template-columns: 1.1fr 0.9fr
+        }
+
+        @media(max-width:1000px) {
+            .g4 {
+                grid-template-columns: repeat(2, 1fr)
+            }
+
+            .g3,
+            .g2,
+            .g2b {
+                grid-template-columns: 1fr
+            }
+        }
+
+        @media(max-width:600px) {
+            .g4 {
+                grid-template-columns: 1fr
+            }
+        }
+
+        /* KPI */
+        .kl {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--dim);
+            text-transform: uppercase;
+            letter-spacing: .05em
+        }
+
+        .kv {
+            font-size: 1.7rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin: 3px 0
+        }
+
+        .ks {
+            font-size: .72rem;
+            color: var(--muted)
+        }
+
+        /* Winner card */
+        .winner-card {
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            background: rgba(52, 211, 153, 0.06)
+        }
+
+        .winner-card .kv {
+            color: var(--green)
+        }
+
+        /* Score bars */
+        .srow {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 0;
+            border-bottom: 1px solid rgba(100, 116, 139, 0.1)
+        }
+
+        .srow:last-child {
+            border: none
+        }
+
+        .slbl {
+            width: 90px;
+            font-size: .75rem;
+            font-weight: 600;
+            color: var(--muted)
+        }
+
+        .sbar {
+            flex: 1;
+            height: 8px;
+            background: rgba(100, 116, 139, 0.12);
+            border-radius: 4px;
+            overflow: hidden
+        }
+
+        .sfill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width .4s cubic-bezier(.4, 0, .2, 1)
+        }
+
+        .sval {
+            width: 42px;
+            font-size: .82rem;
+            font-weight: 700;
+            text-align: right;
+            font-variant-numeric: tabular-nums
+        }
+
+        /* Canvas */
+        canvas {
+            border-radius: 10px;
+            width: 100%;
+            display: block
+        }
+
+        /* Static imgs */
+        .simg {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            transition: transform .2s
+        }
+
+        .simg:hover {
+            transform: scale(1.01)
+        }
+
+        figure {
+            margin: 0
+        }
+
+        figure p {
+            color: var(--muted);
+            font-size: .72rem;
+            margin-top: 4px;
+            text-align: center
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .78rem
+        }
+
+        th,
+        td {
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(100, 116, 139, 0.1)
+        }
+
+        th {
+            color: var(--dim);
+            font-weight: 600;
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .04em
+        }
+
+        .tok {
+            color: var(--green);
+            font-weight: 700
+        }
+
+        .tbad {
+            color: var(--red);
+            font-weight: 700
+        }
+
+        .twin {
+            background: rgba(52, 211, 153, 0.08)
+        }
+
+        /* Animate */
+        @keyframes fi {
+            from {
+                opacity: 0;
+                transform: translateY(8px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .card {
+            animation: fi .4s ease-out both
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg)
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="ctrl-bar">
+        <div class="ctrl-inner">
+            <div class="ctrl-section">
+                <div class="ctrl-section-title">Building Profile</div>
+                <div class="cg"><label>Flood Depth</label>
+                    <div class="sw"><input type="range" id="rFD" min="0.5" max="4" step="0.05" value="2.5" /><span
+                            class="sv" id="vFD">2.50 m</span></div>
+                </div>
+                <div class="cg"><label>Shear Cap.</label>
+                    <div class="sw"><input type="range" id="rSC" min="20" max="60" step="1" value="40" /><span
+                            class="sv" id="vSC">40 kN</span></div>
+                </div>
+                <div class="cg"><label>Wall Length</label>
+                    <div class="sw"><input type="range" id="rWL" min="1" max="3" step="0.05" value="2" /><span
+                            class="sv" id="vWL">2.00 m</span></div>
+                </div>
+                <div class="cg"><label>Basement H</label>
+                    <div class="sw"><input type="range" id="rBH" min="1" max="4" step="0.1" value="2.5" /><span
+                            class="sv" id="vBH">2.50 m</span></div>
+                </div>
+            </div>
+            <div class="ctrl-section">
+                <div class="ctrl-section-title">Model Parameters</div>
+                <div class="cg"><label>Overtopping</label>
+                    <div class="sw"><input type="range" id="rOL" min="0" max="1" step="0.01" value="0.35" /><span
+                            class="sv" id="vOL">0.35</span></div>
+                </div>
+                <div class="cg"><label>Wet Factor</label>
+                    <div class="sw"><input type="range" id="rWF" min="0" max="0.3" step="0.005" value="0.05" /><span
+                            class="sv" id="vWF">0.05</span></div>
+                </div>
+                <div class="cg"><label>Barrier Fail</label>
+                    <div class="sw"><input type="range" id="rBF" min="0" max="0.3" step="0.01" value="0.08" /><span
+                            class="sv" id="vBF">0.08</span></div>
+                </div>
+                <div class="cg"><label>Reliability</label>
+                    <div class="sw"><input type="range" id="rBR" min="0.5" max="0.99" step="0.01" value="0.87" /><span
+                            class="sv" id="vBR">0.87</span></div>
+                </div>
+            </div>
+            <div class="ctrl-section">
+                <div class="ctrl-section-title">Toggles</div>
+                <div style="display:flex;gap:14px;align-items:center">
+                    <label class="toggle"><input type="checkbox" id="tEP" checked /><span></span></label><span
+                        class="tgl-label">Earth Pressure</span>
+                    <label class="toggle"><input type="checkbox" id="tOP" checked /><span></span></label><span
+                        class="tgl-label">Out-of-Plane</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <section class="card" style="margin-bottom:14px">
+            <span class="chip">Flood Preservation MOGA v2 · Input-Driven</span>
+            <h1 style="margin-top:6px">Historic URM Building Flood-Resilience Dashboard</h1>
+            <p class="sub">Adjust the <strong style="color:var(--ink)">building profile</strong> and <strong
+                    style="color:var(--ink)">model parameters</strong> above. The engine evaluates <strong
+                    style="color:var(--green)">495 candidates</strong> across all strategies to find the optimal
+                solution in real time.</p>
+        </section>
+
+        <!-- Winner + KPIs -->
+        <div class="grid g4" style="margin-bottom:14px" id="kpiRow">
+            <article class="card winner-card" id="winCard">
+                <div class="kl">🏆 Optimal Strategy</div>
+                <div class="kv" id="kWin">—</div>
+                <div class="ks" id="kWinName">—</div>
+            </article>
+            <article class="card">
+                <div class="kl">Optimal Protection Height</div>
+                <div class="kv" id="kPH" style="color:var(--accent)">—</div>
+                <div class="ks">Best design gene</div>
+            </article>
+            <article class="card">
+                <div class="kl">Optimal Visual Impact</div>
+                <div class="kv" id="kVIF" style="color:var(--accent2)">—</div>
+                <div class="ks" id="kVIFd">—</div>
+            </article>
+            <article class="card">
+                <div class="kl">Composite Score</div>
+                <div class="kv" id="kComp" style="color:var(--green)">—</div>
+                <div class="ks">Min of 3 objectives</div>
+            </article>
+        </div>
+
+        <!-- Strategy Comparison -->
+        <div class="grid g2b" style="margin-bottom:14px">
+            <article class="card">
+                <h2>Strategy Comparison</h2>
+                <table id="compTable">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Strategy</th>
+                            <th>Best PH</th>
+                            <th>Best VIF</th>
+                            <th>Structural</th>
+                            <th>Preservation</th>
+                            <th>Utility</th>
+                            <th>Composite</th>
+                        </tr>
+                    </thead>
+                    <tbody id="compBody"></tbody>
+                </table>
+            </article>
+            <article class="card">
+                <h2>Radar — All Strategies</h2>
+                <canvas id="radarC" width="420" height="340"></canvas>
+            </article>
+        </div>
+
+        <!-- Building Section + Heatmap -->
+        <div class="grid g2" style="margin-bottom:14px">
+            <article class="card">
+                <h2>Building Section (Winner)</h2><canvas id="secC" width="600" height="420"></canvas>
+            </article>
+            <article class="card">
+                <h2>Spatial Flood-Depth Grid (Winner)</h2><canvas id="heatC" width="600" height="420"></canvas>
+            </article>
+        </div>
+
+        <!-- Sensitivity + Bar -->
+        <div class="grid g2" style="margin-bottom:14px">
+            <article class="card">
+                <h2>Sensitivity: Composite vs Flood Depth</h2><canvas id="sensC" width="600" height="320"></canvas>
+            </article>
+            <article class="card">
+                <h2>Interior Depth by Strategy</h2><canvas id="barC" width="600" height="320"></canvas>
+            </article>
+        </div>
+
+        <!-- Parallel Coordinates -->
+        <article class="card" style="margin-bottom:14px">
+            <h2>Parallel Coordinates — Full Candidate Space</h2>
+            <p class="sub" style="margin-bottom:8px">Each faint line is one of <strong style="color:var(--green)">495 candidates</strong>. Bold lines = best per strategy. White-outlined dots = overall winner.</p>
+            <canvas id="parC" width="900" height="360"></canvas>
+        </article>
+
+        <!-- NPS Sub-scores -->
+        <section class="card" style="margin-bottom:14px">
+            <h2>NPS Preservation Sub-Scores by Strategy</h2>
+            <div id="npsGrid"></div>
+        </section>
+
+        <!-- Static MOGA -->
+        <section class="card" style="margin-bottom:14px">
+            <h2>MOGA Convergence & Pareto (from optimization run)</h2>
+            <div class="grid g2">
+                <figure><img class="simg" src="visualizations/generation_trends_multiseed.png" alt="Conv" />
+                    <p>Multi-seed utility trajectories</p>
+                </figure>
+                <figure><img class="simg" src="visualizations/seed_envelope.png" alt="Env" />
+                    <p>Decision envelope across seeds</p>
+                </figure>
+            </div>
+        </section>
+        <section class="card" style="margin-bottom:14px">
+            <h2>Pairwise Pareto Projections</h2>
+            <div class="grid g3">
+                <figure><img class="simg" src="visualizations/pareto_pair_structural_preservation.png" alt="SP" />
+                    <p>Structural vs Preservation</p>
+                </figure>
+                <figure><img class="simg" src="visualizations/pareto_pair_structural_utility.png" alt="SU" />
+                    <p>Structural vs Utility</p>
+                </figure>
+                <figure><img class="simg" src="visualizations/pareto_pair_preservation_utility.png" alt="PU" />
+                    <p>Preservation vs Utility</p>
+                </figure>
+            </div>
+        </section>
+        <section class="card" style="margin-bottom:14px">
+            <h2>3D Pareto Front — MOGA Multi-Seed (from optimization run)</h2>
+            <p class="sub" style="margin-bottom:8px">Interactive 3D scatter of <strong style="color:var(--green)">MOGA Pareto front</strong> across 20 seeds. <strong style="color:var(--amber)">★ = Consensus Winner</strong>. Drag to rotate, scroll to zoom.</p>
+            <canvas id="mogaPareto3D" width="900" height="500" style="cursor:grab"></canvas>
+        </section>
+
+        <!-- Interactive 3D Pareto Projection -->
+        <article class="card" style="margin-bottom:14px">
+            <h2>3D Pareto Projection — All 495 Candidates</h2>
+            <p class="sub" style="margin-bottom:8px">Interactive 3D scatter of all candidates. <strong style="color:var(--amber)">★ = Winner</strong>. Drag to rotate, scroll to zoom.</p>
+            <canvas id="pareto3D" width="900" height="500" style="cursor:grab"></canvas>
+        </article>
+
+        <section class="card">
+            <h2>How to Use</h2>
+            <ol style="color:var(--muted);font-size:.8rem;padding-left:18px;line-height:1.8">
+                <li>Adjust <strong style="color:var(--ink)">Building Profile</strong> sliders to match your building and
+                    flood scenario.</li>
+                <li>Tune <strong style="color:var(--ink)">Model Parameters</strong> for sensitivity analysis.</li>
+                <li>Toggle <strong style="color:var(--ink)">Earth Pressure</strong> and <strong
+                        style="color:var(--ink)">Out-of-Plane</strong> checks on/off.</li>
+                <li>The engine evaluates <strong style="color:var(--green)">495 candidates</strong> (3 strategies × 15
+                    PH × 11 VIF) and shows the optimal result.</li>
+                <li>Static Pareto and convergence plots below are from the full MOGA run.</li>
+            </ol>
+        </section>
+    </div>
+
+    <script>
+        const SN = { 0: "Dry Floodproofing (Sealant/Coating)", 1: "Dry Floodproofing (Removable Barrier)", 2: "Wet Floodproofing (Hydrostatic Vents)" };
+        const SC = { 0: "#f87171", 1: "#38bdf8", 2: "#34d399" };
+
+        // Reactive inputs
+        function I() {
+            return {
+                fd: +document.getElementById('rFD').value,
+                sc: +document.getElementById('rSC').value,
+                wl: +document.getElementById('rWL').value,
+                bh: +document.getElementById('rBH').value,
+                ol: +document.getElementById('rOL').value,
+                wf: +document.getElementById('rWF').value,
+                bf: +document.getElementById('rBF').value,
+                br: +document.getElementById('rBR').value,
+                ep: document.getElementById('tEP').checked,
+                op: document.getElementById('tOP').checked
+            }
+        }
+
+        function cl(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
+        function hForce(h, wl, g) { return .5 * g * h * h * wl }
+        function ePress(h, wl, gs, k0) { return .5 * k0 * gs * h * h * wl }
+        function bEquiv(fc, wh) { return wh <= 0 ? 0 : 3 * fc / Math.max(wh, 1e-6) }
+        function hydro(peak) { const d = []; for (let i = 0; i < 12; i++) { const t = i / 11; d.push(Math.max(0, t <= .5 ? peak * (t / .5) : peak * (1 - (t - .5) / .5))) } return d }
+
+        function leak(s, ext, ph, br, dfp) {
+            if (s === 2) return ext;
+            if (s === 0) { if (ext <= ph) return .08 * ext; return (ext - ph) * .92 + .1 * ph }
+            const er = cl(br - dfp, 0, .99);
+            if (ext <= ph) return .03 * ext * (1 - er);
+            return (ext - ph) * (.55 + .35 * (1 - er));
+        }
+
+        function npsSub(s, v) {
+            const rev = { 0: 20, 1: 95, 2: 85 }[s];
+            let co = cl(100 - Math.abs(v - .1) * 140, 0, 100);
+            let di = cl(100 - Math.abs(v - .1) * 120, 0, 100);
+            let mo = { 0: 10, 1: 75, 2: 80 }[s]; if (s === 0) mo -= 35; mo = cl(mo, 0, 100);
+            return { reversibility: rev, compatibility: co, distinguishability: di, moisture: mo, fenestration: 100 };
+        }
+
+        function oPres(s, v) {
+            const p = npsSub(s, v);
+            let sc = .30 * p.reversibility + .18 * p.compatibility + .12 * p.distinguishability + .28 * p.moisture + .12 * p.fenestration;
+            if (s === 0) sc -= 15; if (s === 1) sc += 6; return cl(sc, 0, 100);
+        }
+
+        function oStruct(s, ph, inp) {
+            const g = 9.81, gs = 18, k0 = .5, fc = 55;
+            let pkf = 0;
+            for (const d of hydro(inp.fd)) {
+                let he;
+                if (s === 0 || s === 1) { he = Math.min(d, ph); if (d > ph) he += leak(s, d, ph, inp.br, inp.bf) * inp.ol }
+                else { he = inp.wf * d }
+                let f = hForce(he, inp.wl, g);
+                if (inp.ep) f += ePress(Math.min(inp.bh, he), inp.wl, gs, k0);
+                pkf = Math.max(pkf, f);
+            }
+            let cap = inp.sc;
+            if (inp.op) cap = Math.min(cap, bEquiv(fc, Math.max(inp.bh, .1)));
+            if ((s === 0 || s === 1) && pkf > cap) return 0;
+            const r = cl(pkf / cap, 0, 2); let b = 100 * (1 - r);
+            if (s === 2) b = Math.max(b, 92);
+            return cl(b, 0, 100);
+        }
+
+        function oUtil(s, ph, inp) {
+            const depths = hydro(inp.fd);
+            const int = depths.map(d => leak(s, d, ph, inp.br, inp.bf));
+            const wh = int.filter(d => d > .1).length, pk = Math.max(...int);
+            let imm = s === 2 ? 0 : cl(100 - 35 * pk - 4 * wh, 0, 100);
+            let rd = 8 * pk + .6 * wh; if (s === 0) rd += 4; if (s === 1) rd -= 1.5;
+            const cn = { 0: .5, 1: .35, 2: .45 }[s];
+            return cl(.5 * imm + .3 * cl(100 - 7 * rd, 0, 100) + .2 * 100 * (1 - cn), 0, 100);
+        }
+
+        function baseline(inp) {
+            const f = hForce(inp.fd, inp.wl, 9.81);
+            return { structural: f > inp.sc ? 0 : cl(100 * (1 - f / inp.sc), 0, 100), preservation: cl(18 - 8 * Math.max(0, inp.fd - 1.5), 0, 100), utility: cl(10 - 3 * inp.fd, 0, 100) };
+        }
+
+        // Grid search: find best PH+VIF for each strategy
+        function gridSearch(inp) {
+            const PHS = []; for (let p = 0; p <= 3.5; p += .25)PHS.push(+p.toFixed(2));
+            const VIFS = []; for (let v = 0; v <= 1; v += .1)VIFS.push(+v.toFixed(2));
+            const results = [];
+            for (let s = 0; s < 3; s++) {
+                let best = null, bestComp = -1;
+                for (const ph of PHS) for (const vif of VIFS) {
+                    const st = oStruct(s, ph, inp), pr = oPres(s, vif), ut = oUtil(s, ph, inp);
+                    const comp = Math.min(st, pr, ut);
+                    if (comp > bestComp) { bestComp = comp; best = { s, ph, vif, st, pr, ut, comp } }
+                }
+                results.push(best);
+            }
+            return results;
+        }
+
+        function simGrid(s, ph, peak, inp, nx, ny) {
+            nx = nx || 80; ny = ny || 54;
+            const sw = 30, sh = 20, bx0 = 8, bx1 = 24, by0 = 5, by1 = 15;
+            const grid = []; let si = 0, mi = 0, ci = 0;
+            for (let j = 0; j < ny; j++) {
+                grid[j] = []; const y = j * sh / (ny - 1);
+                for (let i = 0; i < nx; i++) {
+                    const x = i * sw / (nx - 1);
+                    const ext = cl(peak * (1 - .14 * (x / sw) + .04 * (y / sh)), 0, peak);
+                    const ins = x >= bx0 && x <= bx1 && y >= by0 && y <= by1;
+                    let d;
+                    if (!ins) d = ext;
+                    else { d = leak(s, ext, ph, inp.br, inp.bf) * (.95 + .08 * (x - bx0) / (bx1 - bx0)); si += d; mi = Math.max(mi, d); ci++ }
+                    grid[j][i] = cl(d, 0, peak);
+                }
+            }
+            return { grid, nx, ny, meanI: ci ? si / ci : 0, maxI: mi, peak };
+        }
+
+        // === RENDER ===
+        function update() {
+            const inp = I();
+            // Update value displays
+            document.getElementById('vFD').textContent = inp.fd.toFixed(2) + ' m';
+            document.getElementById('vSC').textContent = inp.sc + ' kN';
+            document.getElementById('vWL').textContent = inp.wl.toFixed(2) + ' m';
+            document.getElementById('vBH').textContent = inp.bh.toFixed(1) + ' m';
+            document.getElementById('vOL').textContent = inp.ol.toFixed(2);
+            document.getElementById('vWF').textContent = inp.wf.toFixed(3);
+            document.getElementById('vBR').textContent = inp.br.toFixed(2);
+            document.getElementById('vBF').textContent = inp.bf.toFixed(2);
+
+            const res = gridSearch(inp);
+            const wi = res.reduce((a, b) => a.comp >= b.comp ? a : b);
+            const bl = baseline(inp);
+
+            // KPIs
+            document.getElementById('kWin').textContent = wi.s;
+            document.getElementById('kWin').style.color = SC[wi.s];
+            document.getElementById('kWinName').textContent = SN[wi.s];
+            document.getElementById('kPH').textContent = wi.ph.toFixed(2) + ' m';
+            document.getElementById('kVIF').textContent = wi.vif.toFixed(2);
+            document.getElementById('kVIFd').textContent = wi.vif < .2 ? 'Minimal visibility' : wi.vif < .5 ? 'Low–moderate' : wi.vif < .7 ? 'Moderate' : 'High';
+            document.getElementById('kComp').textContent = wi.comp.toFixed(1);
+            document.getElementById('kComp').style.color = wi.comp > 40 ? 'var(--green)' : wi.comp > 20 ? 'var(--amber)' : 'var(--red)';
+            document.getElementById('winCard').style.borderColor = SC[wi.s] + '55';
+            document.getElementById('winCard').style.background = SC[wi.s] + '0a';
+
+            // Comparison table
+            let tb = '';
+            for (const r of res) {
+                const isW = r === wi;
+                tb += `<tr class="${isW ? 'twin' : ''}"><td>${isW ? '🏆' : ''}</td><td style="color:${SC[r.s]};font-weight:700">${r.s} · ${SN[r.s].split('(')[1]?.replace(')', '') || SN[r.s]}</td><td>${r.ph.toFixed(2)} m</td><td>${r.vif.toFixed(2)}</td><td class="${r.st > 30 ? 'tok' : 'tbad'}">${r.st.toFixed(1)}</td><td class="${r.pr > 30 ? 'tok' : 'tbad'}">${r.pr.toFixed(1)}</td><td class="${r.ut > 20 ? 'tok' : 'tbad'}">${r.ut.toFixed(1)}</td><td style="font-weight:800;color:${r.comp > 40 ? 'var(--green)' : r.comp > 20 ? 'var(--amber)' : 'var(--red)'}">${r.comp.toFixed(1)}</td></tr>`;
+            }
+            tb += `<tr style="opacity:.5"><td></td><td style="color:var(--muted)">No measures</td><td>—</td><td>—</td><td class="tbad">${bl.structural.toFixed(1)}</td><td class="tbad">${bl.preservation.toFixed(1)}</td><td class="tbad">${bl.utility.toFixed(1)}</td><td class="tbad">${Math.min(bl.structural, bl.preservation, bl.utility).toFixed(1)}</td></tr>`;
+            document.getElementById('compBody').innerHTML = tb;
+
+            // NPS sub-scores per strategy
+            const cats = ['reversibility', 'compatibility', 'distinguishability', 'moisture', 'fenestration'];
+            let ng = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
+            for (const r of res) {
+                const sub = npsSub(r.s, r.vif);
+                ng += `<div class="card" style="padding:12px;border-color:${SC[r.s]}33"><div style="font-size:11px;font-weight:700;color:${SC[r.s]};margin-bottom:6px">${r === wi ? '🏆 ' : ''}Strategy ${r.s}</div>`;
+                for (const c of cats) { const v = sub[c]; const col = v > 60 ? 'var(--green)' : v > 30 ? 'var(--amber)' : 'var(--red)'; ng += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px"><span style="color:var(--muted);text-transform:capitalize">${c}</span><span style="font-weight:700;color:${col}">${v.toFixed(0)}</span></div>` }
+                ng += `<div style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px;font-weight:800;font-size:13px;color:${SC[r.s]}">Total: ${r.pr.toFixed(1)}</div></div>`;
+            }
+            ng += '</div>';
+            document.getElementById('npsGrid').innerHTML = ng;
+
+            drawRadar(res, bl);
+            drawSection(wi, inp);
+            drawHeatmap(wi, inp);
+            drawSensitivity(inp);
+            drawBars(res, inp);
+            drawParCoords(res, inp);
+            cached3D = compute3DPoints(inp);
+            draw3DPareto();
+        }
+
+        function drawRadar(res, bl) {
+            const c = document.getElementById('radarC'), x = c.getContext('2d');
+            const W = c.width, H = c.height, cx = W / 2, cy = H / 2 + 10, R = Math.min(W, H) * .36;
+            x.clearRect(0, 0, W, H);
+            const A = [-Math.PI / 2, -Math.PI / 2 + 2 * Math.PI / 3, -Math.PI / 2 + 4 * Math.PI / 3];
+            const L = ['Structural', 'Preservation', 'Utility'];
+            for (let r = .2; r <= 1; r += .2) { x.beginPath(); for (let i = 0; i < 3; i++)x.lineTo(cx + R * r * Math.cos(A[i]), cy + R * r * Math.sin(A[i])); x.closePath(); x.strokeStyle = 'rgba(100,116,139,0.12)'; x.lineWidth = 1; x.stroke() }
+            for (let i = 0; i < 3; i++) { x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + R * Math.cos(A[i]), cy + R * Math.sin(A[i])); x.strokeStyle = 'rgba(100,116,139,0.2)'; x.stroke() }
+            x.font = '600 11px Inter'; x.fillStyle = '#64748b'; x.textAlign = 'center';
+            for (let i = 0; i < 3; i++) { const lx = cx + (R + 22) * Math.cos(A[i]), ly = cy + (R + 22) * Math.sin(A[i]); x.fillText(L[i], lx, ly + 4) }
+            // Baseline
+            const bv = [bl.structural / 100, bl.preservation / 100, bl.utility / 100];
+            x.beginPath(); for (let i = 0; i < 3; i++)x.lineTo(cx + R * bv[i] * Math.cos(A[i]), cy + R * bv[i] * Math.sin(A[i])); x.closePath(); x.fillStyle = 'rgba(248,113,113,0.06)'; x.fill(); x.strokeStyle = 'rgba(248,113,113,0.35)'; x.lineWidth = 1.5; x.setLineDash([4, 3]); x.stroke(); x.setLineDash([]);
+            // Each strategy
+            for (const r of res) {
+                const v = [r.st / 100, r.pr / 100, r.ut / 100];
+                x.beginPath(); for (let i = 0; i < 3; i++)x.lineTo(cx + R * v[i] * Math.cos(A[i]), cy + R * v[i] * Math.sin(A[i])); x.closePath();
+                x.fillStyle = SC[r.s] + '18'; x.fill(); x.strokeStyle = SC[r.s]; x.lineWidth = 2; x.stroke();
+                for (let i = 0; i < 3; i++) { x.beginPath(); x.arc(cx + R * v[i] * Math.cos(A[i]), cy + R * v[i] * Math.sin(A[i]), 3, 0, Math.PI * 2); x.fillStyle = SC[r.s]; x.fill() }
+            }
+            // Legend
+            x.font = '500 10px Inter'; x.textAlign = 'left'; const lx = W - 130;
+            for (let s = 0; s < 3; s++) { x.fillStyle = SC[s]; x.fillRect(lx, 10 + s * 16, 8, 8); x.fillStyle = '#94a3b8'; x.fillText('Strategy ' + s, lx + 12, 18 + s * 16) }
+            x.fillStyle = 'rgba(248,113,113,.4)'; x.fillRect(lx, 10 + 3 * 16, 8, 8); x.fillStyle = '#94a3b8'; x.fillText('No measures', lx + 12, 18 + 3 * 16);
+        }
+
+        function drawSection(w, inp) {
+            const c = document.getElementById('secC'), x = c.getContext('2d');
+            const W = c.width, H = c.height; x.clearRect(0, 0, W, H);
+            const ox = 80, oy = H - 40, sx = (W - 120) / 10, sy = (H - 80) / 9;
+            const tx = v => ox + v * sx, ty = v => oy - v * sy;
+            // Ground
+            x.strokeStyle = 'rgba(100,116,139,.25)'; x.lineWidth = 1; x.beginPath(); x.moveTo(tx(-1), ty(0)); x.lineTo(tx(11), ty(0)); x.stroke();
+            // Basement
+            x.fillStyle = 'rgba(100,116,139,.06)'; x.fillRect(tx(0), ty(0), tx(8) - tx(0), ty(-inp.bh) - ty(0));
+            x.strokeStyle = 'rgba(100,116,139,.35)'; x.lineWidth = 1.5; x.strokeRect(tx(0), ty(0), tx(8) - tx(0), ty(-inp.bh) - ty(0));
+            // Floors
+            for (const [y0, y1] of [[0, 3.2], [3.2, 6.4]]) { x.fillStyle = 'rgba(100,116,139,.04)'; x.fillRect(tx(0), ty(y1), tx(8) - tx(0), ty(y0) - ty(y1)); x.strokeStyle = 'rgba(100,116,139,.35)'; x.strokeRect(tx(0), ty(y1), tx(8) - tx(0), ty(y0) - ty(y1)) }
+            // Roof
+            x.beginPath(); x.moveTo(tx(0), ty(6.4)); x.lineTo(tx(4), ty(8)); x.lineTo(tx(8), ty(6.4)); x.closePath(); x.fillStyle = 'rgba(100,116,139,.08)'; x.fill(); x.strokeStyle = 'rgba(100,116,139,.4)'; x.stroke();
+            // Windows
+            x.strokeStyle = 'rgba(100,116,139,.3)'; x.lineWidth = 1;
+            for (const [wx, wy] of [[1.5, 1.2], [3.5, 1.2], [5.5, 1.2], [1.5, 4.4], [3.5, 4.4], [5.5, 4.4]]) x.strokeRect(tx(wx), ty(wy + .7), sx * .8, sy * .7);
+            // Flood
+            const fd = inp.fd;
+            x.fillStyle = 'rgba(56,189,248,.1)'; x.fillRect(tx(-1), ty(fd), tx(0) - tx(-1), ty(0) - ty(fd));
+            x.strokeStyle = 'rgba(56,189,248,.5)'; x.lineWidth = 1; x.setLineDash([6, 4]); x.beginPath(); x.moveTo(tx(-1), ty(fd)); x.lineTo(tx(11), ty(fd)); x.stroke(); x.setLineDash([]);
+            // Strategy
+            const s = w.s, ph = w.ph;
+            if (s === 0) { x.fillStyle = 'rgba(248,113,113,.18)'; x.fillRect(tx(0), ty(Math.min(ph, fd)), tx(.15) - tx(0), ty(0) - ty(Math.min(ph, fd))); x.fillRect(tx(7.85), ty(Math.min(ph, fd)), tx(8) - tx(7.85), ty(0) - ty(Math.min(ph, fd))); x.font = '600 10px Inter'; x.fillStyle = SC[0]; x.fillText('Sealant coat', tx(.3), ty(Math.min(ph, fd) / 2)) }
+            else if (s === 1) { x.fillStyle = 'rgba(56,189,248,.2)'; x.fillRect(tx(-.3), ty(Math.min(ph, 3.5)), tx(.3) - tx(-.3), ty(0) - ty(Math.min(ph, 3.5))); x.strokeStyle = SC[1]; x.lineWidth = 2; x.strokeRect(tx(-.3), ty(Math.min(ph, 3.5)), tx(.3) - tx(-.3), ty(0) - ty(Math.min(ph, 3.5))); x.font = '600 10px Inter'; x.fillStyle = SC[1]; x.fillText('Barrier ' + ph.toFixed(2) + 'm', tx(-.2), ty(Math.min(ph, 3.5)) - 5) }
+            else { const id = leak(2, fd, ph, inp.br, inp.bf); x.fillStyle = 'rgba(52,211,153,.08)'; x.fillRect(tx(0), ty(id), tx(8) - tx(0), ty(0) - ty(id)); x.fillStyle = SC[2]; for (let v = 1; v < 8; v += 1.5) { x.beginPath(); x.arc(tx(v), ty(.15), 3.5, 0, Math.PI * 2); x.fill() } x.font = '600 10px Inter'; x.fillStyle = SC[2]; x.fillText('Hydrostatic vents', tx(.5), ty(-.6)) }
+            // Interior
+            const ip = leak(s, fd, ph, inp.br, inp.bf);
+            if (ip > .05 && s !== 2) { x.fillStyle = 'rgba(56,189,248,.06)'; x.fillRect(tx(0), ty(Math.min(ip, 3.2)), tx(8) - tx(0), ty(0) - ty(Math.min(ip, 3.2))) }
+            // Labels
+            x.font = '500 10px Inter'; x.fillStyle = '#64748b'; x.textAlign = 'right';
+            x.fillText('Basement', tx(9.5), ty(-inp.bh / 2)); x.fillText('1st Floor', tx(9.5), ty(1.6)); x.fillText('2nd Floor', tx(9.5), ty(4.8));
+            x.fillStyle = 'rgba(56,189,248,.6)'; x.textAlign = 'left'; x.fillText('Flood ' + fd.toFixed(1) + 'm', tx(-1), ty(fd) - 5);
+            x.fillStyle = '#475569'; x.font = '500 9px Inter'; x.textAlign = 'center';
+            for (let y = -2; y <= 8; y += 2)x.fillText(y, tx(-.7), ty(y) + 4);
+        }
+
+        function dCol(d, pk) { const t = cl(d / pk, 0, 1); if (t < .25) { const u = t / .25; return `rgb(${10 + u * 10 | 0},${20 + u * 60 | 0},${60 + u * 120 | 0})` } if (t < .5) { const u = (t - .25) / .25; return `rgb(${20 + u * 20 | 0},${80 + u * 100 | 0},${180 - u * 40 | 0})` } if (t < .75) { const u = (t - .5) / .25; return `rgb(${40 + u * 180 | 0},${180 + u * 40 | 0},${140 - u * 100 | 0})` } const u = (t - .75) / .25; return `rgb(${220 + u * 35 | 0},${220 - u * 120 | 0},${40 - u * 30 | 0})` }
+
+        function drawHeatmap(w, inp) {
+            const c = document.getElementById('heatC'), x = c.getContext('2d');
+            const W = c.width, H = c.height; x.clearRect(0, 0, W, H);
+            const p = { l: 50, r: 58, t: 28, b: 38 }, gW = W - p.l - p.r, gH = H - p.t - p.b;
+            const r = simGrid(w.s, w.ph, inp.fd, inp);
+            const { grid, nx, ny, peak } = r, cw = gW / nx, ch = gH / ny;
+            for (let j = 0; j < ny; j++)for (let i = 0; i < nx; i++) { x.fillStyle = dCol(grid[j][i], peak); x.fillRect(p.l + i * cw, p.t + (ny - 1 - j) * ch, Math.ceil(cw), Math.ceil(ch)) }
+            x.strokeStyle = 'rgba(255,255,255,.6)'; x.lineWidth = 1.5;
+            const bx0 = 8 / 30 * gW + p.l, bx1 = 24 / 30 * gW + p.l, by0 = (1 - 15 / 20) * gH + p.t, by1 = (1 - 5 / 20) * gH + p.t;
+            x.strokeRect(bx0, by0, bx1 - bx0, by1 - by0);
+            x.font = '500 10px Inter'; x.fillStyle = 'rgba(255,255,255,.75)'; x.textAlign = 'left';
+            x.fillText(`Mean: ${r.meanI.toFixed(2)}m | Max: ${r.maxI.toFixed(2)}m`, p.l + 3, p.t + 12);
+            x.fillStyle = '#475569'; x.font = '500 9px Inter'; x.textAlign = 'center';
+            for (let v = 0; v <= 30; v += 5)x.fillText(v, p.l + v / 30 * gW, H - p.b + 14);
+            x.fillText('Site X (m)', p.l + gW / 2, H - 4);
+            x.textAlign = 'right'; for (let v = 0; v <= 20; v += 5)x.fillText(v, p.l - 5, p.t + (1 - v / 20) * gH + 4);
+            const cbx = W - p.r + 10, cbh = gH;
+            for (let j = 0; j < cbh; j++) { x.fillStyle = dCol(peak * (1 - j / cbh), peak); x.fillRect(cbx, p.t + j, 12, 1) }
+            x.strokeStyle = 'rgba(100,116,139,.25)'; x.strokeRect(cbx, p.t, 12, cbh);
+            x.fillStyle = '#475569'; x.font = '500 8px Inter'; x.textAlign = 'left';
+            x.fillText(peak.toFixed(1), cbx + 14, p.t + 8); x.fillText('0.0', cbx + 14, p.t + cbh);
+            x.font = '600 11px Inter'; x.fillStyle = '#94a3b8'; x.textAlign = 'center'; x.fillText('Strategy ' + w.s + ': ' + SN[w.s].split('(')[1]?.replace(')', ''), p.l + gW / 2, p.t - 10);
+        }
+
+        function drawSensitivity(inp) {
+            const c = document.getElementById('sensC'), x = c.getContext('2d');
+            const W = c.width, H = c.height; x.clearRect(0, 0, W, H);
+            const p = { l: 50, r: 20, t: 20, b: 36 }, gW = W - p.l - p.r, gH = H - p.t - p.b;
+            const fds = []; for (let f = .5; f <= 4; f += .1)fds.push(+f.toFixed(1));
+            const curves = [[], [], []];
+            for (const fd of fds) {
+                const ti = { ...inp, fd };
+                for (let s = 0; s < 3; s++) {
+                    let best = -1;
+                    for (let ph = 0; ph <= 3.5; ph += .5)for (let vif = 0; vif <= 1; vif += .2) {
+                        const comp = Math.min(oStruct(s, ph, ti), oPres(s, vif), oUtil(s, ph, ti));
+                        if (comp > best) best = comp;
+                    }
+                    curves[s].push(best);
+                }
+            }
+            // Grid
+            x.strokeStyle = 'rgba(100,116,139,.1)'; x.lineWidth = 1;
+            for (let v = 0; v <= 100; v += 20) { const y = p.t + gH - v / 100 * gH; x.beginPath(); x.moveTo(p.l, y); x.lineTo(W - p.r, y); x.stroke(); x.fillStyle = '#475569'; x.font = '500 9px Inter'; x.textAlign = 'right'; x.fillText(v, p.l - 5, y + 4) }
+            // Current flood depth line
+            const cx2 = p.l + (inp.fd - .5) / 3.5 * gW;
+            x.strokeStyle = 'rgba(255,255,255,.15)'; x.lineWidth = 1; x.setLineDash([4, 3]); x.beginPath(); x.moveTo(cx2, p.t); x.lineTo(cx2, p.t + gH); x.stroke(); x.setLineDash([]);
+            x.fillStyle = 'rgba(255,255,255,.3)'; x.font = '500 9px Inter'; x.textAlign = 'center'; x.fillText('current', cx2, p.t - 4);
+            // Lines
+            for (let s = 0; s < 3; s++) { x.beginPath(); for (let i = 0; i < fds.length; i++) { const xp = p.l + i / (fds.length - 1) * gW, yp = p.t + gH - curves[s][i] / 100 * gH; i === 0 ? x.moveTo(xp, yp) : x.lineTo(xp, yp) } x.strokeStyle = SC[s]; x.lineWidth = 2; x.stroke() }
+            // X axis
+            x.fillStyle = '#475569'; x.font = '500 9px Inter'; x.textAlign = 'center';
+            for (let f = .5; f <= 4; f += .5)x.fillText(f.toFixed(1), p.l + (f - .5) / 3.5 * gW, H - p.b + 14);
+            x.fillText('Flood Depth (m)', p.l + gW / 2, H - 4);
+            // Legend
+            x.font = '500 10px Inter'; x.textAlign = 'left';
+            for (let s = 0; s < 3; s++) { x.fillStyle = SC[s]; x.fillRect(p.l + 8, p.t + 4 + s * 14, 8, 8); x.fillStyle = '#94a3b8'; x.fillText('S' + s, p.l + 20, p.t + 12 + s * 14) }
+        }
+
+        function drawBars(res, inp) {
+            const c = document.getElementById('barC'), x = c.getContext('2d');
+            const W = c.width, H = c.height; x.clearRect(0, 0, W, H);
+            const p = { l: 50, r: 20, t: 16, b: 50 };
+            const data = [{ name: 'No measures', ...simGrid(2, 0, inp.fd, inp) }];
+            for (const r of res) { const g = simGrid(r.s, r.ph, inp.fd, inp); data.push({ name: 'S' + r.s, meanI: g.meanI, maxI: g.maxI }) }
+            const gW = W - p.l - p.r, gH = H - p.t - p.b;
+            const mx = Math.max(...data.map(d => d.maxI), .3);
+            const gap = gW / data.length, bw = gap * .32;
+            const cols = ['#64748b', '#f87171', '#38bdf8', '#34d399'];
+            for (let i = 0; i < data.length; i++) {
+                const bx = p.l + i * gap + gap * .2;
+                const hm = data[i].meanI / mx * gH, hx = data[i].maxI / mx * gH;
+                x.globalAlpha = .7; x.fillStyle = cols[i]; x.fillRect(bx, p.t + gH - hm, bw, hm);
+                x.globalAlpha = .45; x.fillStyle = '#f87171'; x.fillRect(bx + bw + 2, p.t + gH - hx, bw, hx);
+                x.globalAlpha = 1; x.font = '600 9px Inter'; x.fillStyle = '#e2e8f0'; x.textAlign = 'center';
+                x.fillText(data[i].meanI.toFixed(2), bx + bw / 2, p.t + gH - hm - 4);
+                x.fillStyle = '#f87171'; x.fillText(data[i].maxI.toFixed(2), bx + bw + 2 + bw / 2, p.t + gH - hx - 4);
+                x.fillStyle = '#94a3b8'; x.font = '500 9px Inter';
+                x.save(); x.translate(bx + bw, H - p.b + 8); x.rotate(-.3); x.textAlign = 'left'; x.fillText(data[i].name, 0, 0); x.restore();
+            }
+            x.strokeStyle = 'rgba(100,116,139,.1)';
+            for (let v = 0; v <= mx; v += .5) { const y = p.t + gH - v / mx * gH; x.beginPath(); x.moveTo(p.l, y); x.lineTo(W - p.r, y); x.stroke(); x.fillStyle = '#475569'; x.font = '500 9px Inter'; x.textAlign = 'right'; x.fillText(v.toFixed(1), p.l - 5, y + 4) }
+            x.globalAlpha = .6; x.fillStyle = '#38bdf8'; x.fillRect(W - 160, p.t + 2, 8, 8); x.fillStyle = '#f87171'; x.fillRect(W - 160, p.t + 14, 8, 8);
+            x.globalAlpha = 1; x.fillStyle = '#94a3b8'; x.font = '500 9px Inter'; x.textAlign = 'left'; x.fillText('Mean int.', W - 148, p.t + 10); x.fillText('Max int.', W - 148, p.t + 22);
+        }
+
+        function drawParCoords(res, inp) {
+            const c = document.getElementById('parC'), ctx = c.getContext('2d');
+            const W = c.width, H = c.height; ctx.clearRect(0, 0, W, H);
+            const pd = {l:55, r:55, t:34, b:22}, gW = W-pd.l-pd.r, gH = H-pd.t-pd.b;
+            const axX = [pd.l, pd.l+gW/2, pd.l+gW];
+            const lbls = ['Structural','Preservation','Utility'];
+            const toY = v => pd.t + gH - v/100*gH;
+            // Horizontal grid
+            ctx.lineWidth=1;
+            for(let v=0;v<=100;v+=20){ctx.beginPath();ctx.moveTo(axX[0]-4,toY(v));ctx.lineTo(axX[2]+4,toY(v));ctx.strokeStyle='rgba(100,116,139,0.07)';ctx.stroke()}
+            // Axes
+            for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(axX[i],pd.t-2);ctx.lineTo(axX[i],pd.t+gH+2);ctx.strokeStyle='rgba(100,116,139,0.35)';ctx.lineWidth=1.5;ctx.stroke();ctx.font='600 11px Inter';ctx.fillStyle='#94a3b8';ctx.textAlign='center';ctx.fillText(lbls[i],axX[i],pd.t-14)}
+            // Scale labels
+            ctx.font='500 9px Inter';ctx.fillStyle='#475569';
+            for(let v=0;v<=100;v+=20){ctx.textAlign='right';ctx.fillText(v,axX[0]-8,toY(v)+3);ctx.textAlign='left';ctx.fillText(v,axX[2]+8,toY(v)+3)}
+            // All candidates (faint lines)
+            const PHS2=[];for(let p=0;p<=3.5;p+=.25)PHS2.push(+p.toFixed(2));
+            const VFS2=[];for(let v=0;v<=1;v+=.1)VFS2.push(+v.toFixed(2));
+            for(let s=0;s<3;s++){for(const ph of PHS2){for(const vif of VFS2){
+                const st=oStruct(s,ph,inp),pr=oPres(s,vif),ut=oUtil(s,ph,inp);
+                ctx.beginPath();ctx.moveTo(axX[0],toY(st));ctx.lineTo(axX[1],toY(pr));ctx.lineTo(axX[2],toY(ut));
+                ctx.strokeStyle=SC[s]+'12';ctx.lineWidth=1;ctx.stroke();
+            }}}
+            // Winner
+            const wi2 = res.reduce((a,b)=>a.comp>=b.comp?a:b);
+            // Best per strategy (bold lines)
+            for(const r of res){
+                const vals=[r.st,r.pr,r.ut], isW=r===wi2;
+                if(isW){ctx.save();ctx.shadowColor=SC[r.s];ctx.shadowBlur=12;}
+                ctx.beginPath();ctx.moveTo(axX[0],toY(vals[0]));ctx.lineTo(axX[1],toY(vals[1]));ctx.lineTo(axX[2],toY(vals[2]));
+                ctx.strokeStyle=SC[r.s];ctx.lineWidth=isW?3.5:2.2;ctx.stroke();
+                if(isW) ctx.restore();
+                for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(axX[i],toY(vals[i]),isW?5.5:3.5,0,Math.PI*2);ctx.fillStyle=SC[r.s];ctx.fill();if(isW){ctx.strokeStyle='#fff';ctx.lineWidth=1.8;ctx.stroke()}}
+                if(isW){ctx.font='700 10px Inter';ctx.fillStyle='#e2e8f0';ctx.textAlign='center';for(let i=0;i<3;i++) ctx.fillText(vals[i].toFixed(1),axX[i],toY(vals[i])-10)}
+            }
+            // Legend
+            ctx.font='500 10px Inter';ctx.textAlign='left';
+            const lx2=W-200;
+            for(let s=0;s<3;s++){ctx.fillStyle=SC[s];ctx.fillRect(lx2,pd.t+4+s*16,10,10);ctx.fillStyle='#94a3b8';ctx.fillText('S'+s+': '+(SN[s].split('(')[1]||'').replace(')',''),lx2+14,pd.t+13+s*16)}
+            ctx.globalAlpha=.4;ctx.fillStyle='#64748b';ctx.fillRect(lx2,pd.t+4+3*16,10,10);ctx.globalAlpha=1;ctx.fillStyle='#64748b';ctx.fillText('All 495 candidates',lx2+14,pd.t+13+3*16);
+        }
+
+        // === 3D Pareto Projection ===
+        let rot3 = { ax: -0.55, ay: 0.65 }, zoom3 = 1.0, drag3 = null;
+        const c3D = document.getElementById('pareto3D');
+        c3D.addEventListener('mousedown', e => { drag3 = { x: e.offsetX, y: e.offsetY }; c3D.style.cursor = 'grabbing' });
+        c3D.addEventListener('mousemove', e => {
+            if (!drag3) return;
+            rot3.ay += (e.offsetX - drag3.x) * 0.008;
+            rot3.ax += (e.offsetY - drag3.y) * 0.008;
+            rot3.ax = Math.max(-1.2, Math.min(0.3, rot3.ax));
+            drag3 = { x: e.offsetX, y: e.offsetY };
+            draw3DPareto();
+        });
+        window.addEventListener('mouseup', () => { drag3 = null; c3D.style.cursor = 'grab' });
+        c3D.addEventListener('wheel', e => {
+            e.preventDefault();
+            zoom3 = Math.max(0.4, Math.min(2.5, zoom3 - e.deltaY * 0.001));
+            draw3DPareto();
+        }, { passive: false });
+
+        let cached3D = null;
+        function compute3DPoints(inp) {
+            const PHS3 = []; for (let p = 0; p <= 3.5; p += .25) PHS3.push(+p.toFixed(2));
+            const VFS3 = []; for (let v = 0; v <= 1; v += .1) VFS3.push(+v.toFixed(2));
+            const pts = [];
+            let bestComp = -1, bestIdx = 0;
+            for (let s = 0; s < 3; s++) {
+                for (const ph of PHS3) {
+                    for (const vif of VFS3) {
+                        const st = oStruct(s, ph, inp), pr = oPres(s, vif), ut = oUtil(s, ph, inp);
+                        const comp = Math.min(st, pr, ut);
+                        pts.push({ x: st, y: pr, z: ut, s, comp });
+                        if (comp > bestComp) { bestComp = comp; bestIdx = pts.length - 1 }
+                    }
+                }
+            }
+            return { pts, winIdx: bestIdx };
+        }
+
+        function project3D(x, y, z, cx, cy, scale) {
+            const ca = Math.cos(rot3.ay), sa = Math.sin(rot3.ay);
+            const cb = Math.cos(rot3.ax), sb = Math.sin(rot3.ax);
+            // Rotate around Y then X
+            const x1 = x * ca - z * sa;
+            const z1 = x * sa + z * ca;
+            const y1 = y * cb - z1 * sb;
+            const z2 = y * sb + z1 * cb;
+            const sc = scale * zoom3 * (1 + z2 * 0.001);
+            return { sx: cx + x1 * sc, sy: cy - y1 * sc, depth: z2 };
+        }
+
+        function draw3DPareto() {
+            if (!cached3D) return;
+            const c = c3D, ctx = c.getContext('2d');
+            const W = c.width, H = c.height;
+            ctx.clearRect(0, 0, W, H);
+            const cx = W / 2, cy = H / 2 + 20, scale = 2.2;
+
+            // Draw axes
+            const axes = [
+                { from: [0,0,0], to: [52,0,0], label: 'Structural', col: '#94a3b8' },
+                { from: [0,0,0], to: [0,52,0], label: 'Preservation', col: '#94a3b8' },
+                { from: [0,0,0], to: [0,0,52], label: 'Utility', col: '#94a3b8' },
+            ];
+            for (const a of axes) {
+                const p0 = project3D(a.from[0]-25, a.from[1]-25, a.from[2]-25, cx, cy, scale);
+                const p1 = project3D(a.to[0]-25, a.to[1]-25, a.to[2]-25, cx, cy, scale);
+                ctx.beginPath(); ctx.moveTo(p0.sx, p0.sy); ctx.lineTo(p1.sx, p1.sy);
+                ctx.strokeStyle = 'rgba(148,163,184,0.35)'; ctx.lineWidth = 1.2; ctx.stroke();
+                // Axis label
+                const pl = project3D(a.to[0]*1.15-25, a.to[1]*1.15-25, a.to[2]*1.15-25, cx, cy, scale);
+                ctx.font = '600 11px Inter'; ctx.fillStyle = a.col; ctx.textAlign = 'center';
+                ctx.fillText(a.label, pl.sx, pl.sy);
+            }
+
+            // Gridlines on floor
+            ctx.strokeStyle = 'rgba(100,116,139,0.08)'; ctx.lineWidth = 0.6;
+            for (let v = 0; v <= 50; v += 10) {
+                const g0 = project3D(v-25, -25, -25, cx, cy, scale);
+                const g1 = project3D(v-25, -25, 27, cx, cy, scale);
+                ctx.beginPath(); ctx.moveTo(g0.sx, g0.sy); ctx.lineTo(g1.sx, g1.sy); ctx.stroke();
+                const g2 = project3D(-25, -25, v-25, cx, cy, scale);
+                const g3 = project3D(27, -25, v-25, cx, cy, scale);
+                ctx.beginPath(); ctx.moveTo(g2.sx, g2.sy); ctx.lineTo(g3.sx, g3.sy); ctx.stroke();
+            }
+
+            // Tick labels at ends
+            ctx.font = '500 9px Inter'; ctx.fillStyle = '#475569';
+            for (let v = 0; v <= 100; v += 25) {
+                const n = v / 100 * 50;
+                const t1 = project3D(n-25, -26, -26, cx, cy, scale);
+                ctx.textAlign = 'center'; ctx.fillText(v, t1.sx, t1.sy + 12);
+            }
+
+            // Sort by depth for painter's algorithm
+            const { pts, winIdx } = cached3D;
+            const projected = pts.map((p, i) => {
+                const nx = p.x / 100 * 50 - 25, ny = p.y / 100 * 50 - 25, nz = p.z / 100 * 50 - 25;
+                const pp = project3D(nx, ny, nz, cx, cy, scale);
+                return { ...pp, s: p.s, comp: p.comp, isWin: i === winIdx, ox: p.x, oy: p.y, oz: p.z };
+            });
+            projected.sort((a, b) => a.depth - b.depth);
+
+            // Draw points
+            for (const p of projected) {
+                if (p.isWin) continue; // draw winner last
+                const r = 2.5 + p.comp * 0.03;
+                const alpha = 0.15 + p.comp * 0.005;
+                ctx.beginPath(); ctx.arc(p.sx, p.sy, r, 0, Math.PI * 2);
+                ctx.fillStyle = SC[p.s]; ctx.globalAlpha = alpha; ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+
+            // Draw winner as gold star
+            const win = projected.find(p => p.isWin);
+            if (win) {
+                // Glow
+                ctx.beginPath(); ctx.arc(win.sx, win.sy, 16, 0, Math.PI * 2);
+                ctx.fillStyle = '#fbbf24'; ctx.globalAlpha = 0.2; ctx.fill(); ctx.globalAlpha = 1;
+                // Star shape
+                drawStar(ctx, win.sx, win.sy, 5, 11, 5);
+                ctx.fillStyle = '#fbbf24'; ctx.fill();
+                ctx.strokeStyle = '#0b1120'; ctx.lineWidth = 1.5; ctx.stroke();
+                // Label
+                ctx.font = '700 10px Inter'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'left';
+                ctx.fillText('Winner: S' + pts[winIdx].s + ' (' + win.ox.toFixed(0) + ', ' + win.oy.toFixed(0) + ', ' + win.oz.toFixed(0) + ')', win.sx + 14, win.sy + 4);
+            }
+
+            // Legend
+            ctx.font = '500 10px Inter'; ctx.textAlign = 'left'; ctx.globalAlpha = 1;
+            const lx = 16, ly = 16;
+            for (let s = 0; s < 3; s++) {
+                ctx.fillStyle = SC[s]; ctx.beginPath(); ctx.arc(lx + 5, ly + s * 18 + 5, 5, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#94a3b8'; ctx.fillText('S' + s + ': ' + (SN[s].split('(')[1] || '').replace(')', ''), lx + 14, ly + s * 18 + 9);
+            }
+            drawStar(ctx, lx + 5, ly + 3 * 18 + 5, 5, 7, 4);
+            ctx.fillStyle = '#fbbf24'; ctx.fill();
+            ctx.fillStyle = '#fbbf24'; ctx.fillText('Consensus Winner', lx + 14, ly + 3 * 18 + 9);
+        }
+
+        function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+            let rot = Math.PI / 2 * 3, step = Math.PI / spikes;
+            ctx.beginPath(); ctx.moveTo(cx, cy - outerR);
+            for (let i = 0; i < spikes; i++) {
+                ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR); rot += step;
+                ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR); rot += step;
+            }
+            ctx.lineTo(cx, cy - outerR); ctx.closePath();
+        }
+
+        // === MOGA 3D Pareto (from JSON data) ===
+        let rotM = { ax: -0.55, ay: 0.65 }, zoomM = 1.0, dragM = null, mogaData = null;
+        const cMoga = document.getElementById('mogaPareto3D');
+
+        cMoga.addEventListener('mousedown', e => { dragM = { x: e.offsetX, y: e.offsetY }; cMoga.style.cursor = 'grabbing' });
+        cMoga.addEventListener('mousemove', e => {
+            if (!dragM) return;
+            rotM.ay += (e.offsetX - dragM.x) * 0.008;
+            rotM.ax += (e.offsetY - dragM.y) * 0.008;
+            rotM.ax = Math.max(-1.2, Math.min(0.3, rotM.ax));
+            dragM = { x: e.offsetX, y: e.offsetY };
+            drawMoga3D();
+        });
+        window.addEventListener('mouseup', () => { if (dragM) { dragM = null; cMoga.style.cursor = 'grab' } });
+        cMoga.addEventListener('wheel', e => {
+            e.preventDefault();
+            zoomM = Math.max(0.4, Math.min(2.5, zoomM - e.deltaY * 0.001));
+            drawMoga3D();
+        }, { passive: false });
+
+        function projectM(x, y, z, cx, cy, scale) {
+            const ca = Math.cos(rotM.ay), sa = Math.sin(rotM.ay);
+            const cb = Math.cos(rotM.ax), sb = Math.sin(rotM.ax);
+            const x1 = x * ca - z * sa;
+            const z1 = x * sa + z * ca;
+            const y1 = y * cb - z1 * sb;
+            const z2 = y * sb + z1 * cb;
+            const sc = scale * zoomM * (1 + z2 * 0.001);
+            return { sx: cx + x1 * sc, sy: cy - y1 * sc, depth: z2 };
+        }
+
+        function drawMoga3D() {
+            if (!mogaData) return;
+            const c = cMoga, ctx = c.getContext('2d');
+            const W = c.width, H = c.height;
+            ctx.clearRect(0, 0, W, H);
+            const cx = W / 2, cy = H / 2 + 20, scale = 2.2;
+
+            // Axes
+            const axes = [
+                { from: [0,0,0], to: [52,0,0], label: 'Structural' },
+                { from: [0,0,0], to: [0,52,0], label: 'Preservation' },
+                { from: [0,0,0], to: [0,0,52], label: 'Utility' },
+            ];
+            for (const a of axes) {
+                const p0 = projectM(a.from[0]-25, a.from[1]-25, a.from[2]-25, cx, cy, scale);
+                const p1 = projectM(a.to[0]-25, a.to[1]-25, a.to[2]-25, cx, cy, scale);
+                ctx.beginPath(); ctx.moveTo(p0.sx, p0.sy); ctx.lineTo(p1.sx, p1.sy);
+                ctx.strokeStyle = 'rgba(148,163,184,0.35)'; ctx.lineWidth = 1.2; ctx.stroke();
+                const pl = projectM(a.to[0]*1.15-25, a.to[1]*1.15-25, a.to[2]*1.15-25, cx, cy, scale);
+                ctx.font = '600 11px Inter'; ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'center';
+                ctx.fillText(a.label, pl.sx, pl.sy);
+            }
+
+            // Floor grid
+            ctx.strokeStyle = 'rgba(100,116,139,0.08)'; ctx.lineWidth = 0.6;
+            for (let v = 0; v <= 50; v += 10) {
+                let g0 = projectM(v-25,-25,-25,cx,cy,scale), g1 = projectM(v-25,-25,27,cx,cy,scale);
+                ctx.beginPath(); ctx.moveTo(g0.sx,g0.sy); ctx.lineTo(g1.sx,g1.sy); ctx.stroke();
+                g0 = projectM(-25,-25,v-25,cx,cy,scale); g1 = projectM(27,-25,v-25,cx,cy,scale);
+                ctx.beginPath(); ctx.moveTo(g0.sx,g0.sy); ctx.lineTo(g1.sx,g1.sy); ctx.stroke();
+            }
+
+            // Tick labels
+            ctx.font = '500 9px Inter'; ctx.fillStyle = '#475569';
+            for (let v = 0; v <= 100; v += 25) {
+                const n = v / 100 * 50;
+                const t = projectM(n-25, -26, -26, cx, cy, scale);
+                ctx.textAlign = 'center'; ctx.fillText(v, t.sx, t.sy + 12);
+            }
+
+            // Project & sort points
+            const pts = mogaData.points;
+            const win = mogaData.winner;
+            const projected = pts.map(p => {
+                const nx = p.st/100*50-25, ny = p.pr/100*50-25, nz = p.ut/100*50-25;
+                const pp = projectM(nx, ny, nz, cx, cy, scale);
+                return { ...pp, s: p.s, st: p.st, pr: p.pr, ut: p.ut };
+            });
+            projected.sort((a,b) => a.depth - b.depth);
+
+            // Draw points
+            for (const p of projected) {
+                ctx.beginPath(); ctx.arc(p.sx, p.sy, 3, 0, Math.PI * 2);
+                ctx.fillStyle = SC[p.s]; ctx.globalAlpha = 0.45; ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+
+            // Winner star
+            if (win) {
+                const wn = projectM(win.objectives[0]/100*50-25, win.objectives[1]/100*50-25, win.objectives[2]/100*50-25, cx, cy, scale);
+                ctx.beginPath(); ctx.arc(wn.sx, wn.sy, 16, 0, Math.PI * 2);
+                ctx.fillStyle = '#fbbf24'; ctx.globalAlpha = 0.2; ctx.fill(); ctx.globalAlpha = 1;
+                drawStar(ctx, wn.sx, wn.sy, 5, 11, 5);
+                ctx.fillStyle = '#fbbf24'; ctx.fill();
+                ctx.strokeStyle = '#0b1120'; ctx.lineWidth = 1.5; ctx.stroke();
+                ctx.font = '700 10px Inter'; ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'left';
+                ctx.fillText('Winner: S' + win.strategy + ' (' + win.objectives[0].toFixed(0) + ', ' + win.objectives[1].toFixed(0) + ', ' + win.objectives[2].toFixed(0) + ')', wn.sx + 14, wn.sy + 4);
+            }
+
+            // Legend
+            ctx.font = '500 10px Inter'; ctx.textAlign = 'left'; ctx.globalAlpha = 1;
+            const lx = 16, ly = 16;
+            for (let s = 0; s < 3; s++) {
+                ctx.fillStyle = SC[s]; ctx.beginPath(); ctx.arc(lx+5, ly+s*18+5, 5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#94a3b8'; ctx.fillText('S'+s+': '+(SN[s].split('(')[1]||'').replace(')',''), lx+14, ly+s*18+9);
+            }
+            drawStar(ctx, lx+5, ly+3*18+5, 5, 7, 4);
+            ctx.fillStyle = '#fbbf24'; ctx.fill();
+            ctx.fillStyle = '#fbbf24'; ctx.fillText('MOGA Consensus Winner', lx+14, ly+3*18+9);
+
+            // Point count label
+            ctx.font = '500 9px Inter'; ctx.fillStyle = '#64748b'; ctx.textAlign = 'right';
+            ctx.fillText(pts.length + ' Pareto-front points across 20 seeds', W - 16, H - 10);
+        }
+
+        // Load MOGA data
+        fetch('moga_pareto_data.json').then(r => r.json()).then(d => { mogaData = d; drawMoga3D(); })
+            .catch(() => {
+                const ctx = cMoga.getContext('2d');
+                ctx.font = '500 13px Inter'; ctx.fillStyle = '#64748b'; ctx.textAlign = 'center';
+                ctx.fillText('Run MOGA engine to generate moga_pareto_data.json', cMoga.width/2, cMoga.height/2);
+            });
+
+        // Wire up events
+        document.querySelectorAll('input[type=range]').forEach(el => el.addEventListener('input', update));
+        document.querySelectorAll('input[type=checkbox]').forEach(el => el.addEventListener('change', update));
+
+        update();
+    </script>
+</body>
+
+</html>
