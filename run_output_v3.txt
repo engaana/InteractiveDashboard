@@ -1,0 +1,183 @@
+Seed 11 Gen 01: strategy=1 objectives=(37.29, 67.88, 34.79)
+Seed 11 Gen 10: strategy=1 objectives=(48.0, 70.87, 46.69)
+Seed 11 Gen 20: strategy=1 objectives=(48.0, 70.87, 46.69)
+Seed 11 Gen 30: strategy=1 objectives=(48.0, 70.87, 46.69)
+Seed 11 Gen 40: strategy=1 objectives=(48.0, 70.87, 46.69)
+Seed 11 Gen 50: strategy=1 objectives=(48.0, 70.87, 46.69)
+Seed 11: sanity_check_triggered=0 times
+Seed 22 Gen 01: strategy=1 objectives=(45.12, 96.68, 30.83)
+Seed 22 Gen 10: strategy=1 objectives=(43.95, 87.02, 39.96)
+Seed 22 Gen 20: strategy=1 objectives=(48.76, 93.92, 41.11)
+Seed 22 Gen 30: strategy=1 objectives=(48.76, 93.92, 41.11)
+Seed 22 Gen 40: strategy=1 objectives=(46.28, 81.17, 41.28)
+Seed 22 Gen 50: strategy=1 objectives=(45.04, 97.44, 43.45)
+Seed 22: sanity_check_triggered=0 times
+Seed 33 Gen 01: strategy=1 objectives=(50.58, 95.33, 36.31)
+Seed 33 Gen 10: strategy=1 objectives=(43.56, 95.3, 39.34)
+Seed 33 Gen 20: strategy=1 objectives=(41.55, 73.24, 46.81)
+Seed 33 Gen 30: strategy=1 objectives=(41.55, 73.24, 46.81)
+Seed 33 Gen 40: strategy=1 objectives=(42.85, 71.83, 47.61)
+Seed 33 Gen 50: strategy=1 objectives=(42.85, 71.83, 47.61)
+Seed 33: sanity_check_triggered=0 times
+Seed 44 Gen 01: strategy=1 objectives=(38.49, 88.07, 38.08)
+Seed 44 Gen 10: strategy=1 objectives=(40.78, 93.0, 43.08)
+Seed 44 Gen 20: strategy=1 objectives=(40.78, 93.0, 43.08)
+Seed 44 Gen 30: strategy=1 objectives=(47.44, 97.1, 44.01)
+Seed 44 Gen 40: strategy=1 objectives=(47.44, 97.1, 44.01)
+Seed 44 Gen 50: strategy=1 objectives=(44.83, 94.2, 44.29)
+Seed 44: sanity_check_triggered=0 times
+Seed 55 Gen 01: strategy=1 objectives=(36.64, 67.5, 36.89)
+Seed 55 Gen 10: strategy=1 objectives=(44.71, 88.57, 41.9)
+Seed 55 Gen 20: strategy=1 objectives=(44.71, 88.57, 41.9)
+Seed 55 Gen 30: strategy=1 objectives=(44.71, 88.57, 41.9)
+Seed 55 Gen 40: strategy=1 objectives=(44.71, 88.57, 41.9)
+Seed 55 Gen 50: strategy=1 objectives=(44.71, 88.57, 41.9)
+Seed 55: sanity_check_triggered=0 times
+Seed 66 Gen 01: strategy=1 objectives=(38.47, 83.09, 48.14)
+Seed 66 Gen 10: strategy=1 objectives=(51.59, 83.09, 43.01)
+Seed 66 Gen 20: strategy=1 objectives=(43.09, 91.4, 43.75)
+Seed 66 Gen 30: strategy=1 objectives=(43.09, 91.4, 43.75)
+Seed 66 Gen 40: strategy=1 objectives=(48.44, 83.53, 46.46)
+Seed 66 Gen 50: strategy=1 objectives=(42.51, 94.01, 44.53)
+Seed 66: sanity_check_triggered=0 times
+Seed 77 Gen 01: strategy=1 objectives=(85.03, 67.5, 17.84)
+Seed 77 Gen 10: strategy=1 objectives=(44.69, 79.58, 42.82)
+Seed 77 Gen 20: strategy=1 objectives=(47.81, 90.89, 43.54)
+Seed 77 Gen 30: strategy=1 objectives=(44.94, 91.21, 46.36)
+Seed 77 Gen 40: strategy=1 objectives=(47.81, 90.89, 43.54)
+Seed 77 Gen 50: strategy=1 objectives=(47.81, 90.89, 43.54)
+Seed 77: sanity_check_triggered=0 times
+Seed 88 Gen 01: strategy=1 objectives=(47.36, 68.74, 35.18)
+Seed 88 Gen 10: strategy=1 objectives=(46.48, 75.6, 42.98)
+Seed 88 Gen 20: strategy=1 objectives=(46.48, 75.6, 42.98)
+Seed 88 Gen 30: strategy=1 objectives=(43.49, 93.49, 45.52)
+Seed 88 Gen 40: strategy=1 objectives=(44.39, 94.15, 44.89)
+Seed 88 Gen 50: strategy=1 objectives=(44.39, 94.15, 44.89)
+Seed 88: sanity_check_triggered=0 times
+Seed 99 Gen 01: strategy=1 objectives=(36.68, 68.65, 38.25)
+Seed 99 Gen 10: strategy=1 objectives=(39.0, 94.06, 40.18)
+Seed 99 Gen 20: strategy=1 objectives=(44.21, 93.49, 43.17)
+Seed 99 Gen 30: strategy=1 objectives=(44.21, 93.49, 43.17)
+Seed 99 Gen 40: strategy=1 objectives=(52.52, 94.52, 47.79)
+Seed 99 Gen 50: strategy=1 objectives=(52.52, 94.52, 47.79)
+Seed 99: sanity_check_triggered=0 times
+Seed 111 Gen 01: strategy=1 objectives=(41.86, 96.65, 37.02)
+Seed 111 Gen 10: strategy=1 objectives=(43.05, 94.7, 42.43)
+Seed 111 Gen 20: strategy=1 objectives=(44.58, 79.88, 45.25)
+Seed 111 Gen 30: strategy=1 objectives=(43.05, 94.7, 42.43)
+Seed 111 Gen 40: strategy=1 objectives=(43.05, 94.7, 42.43)
+Seed 111 Gen 50: strategy=1 objectives=(46.95, 96.21, 45.59)
+Seed 111: sanity_check_triggered=0 times
+Seed 121 Gen 01: strategy=1 objectives=(35.03, 67.56, 35.69)
+Seed 121 Gen 10: strategy=1 objectives=(41.8, 96.74, 39.91)
+Seed 121 Gen 20: strategy=1 objectives=(49.49, 78.75, 44.03)
+Seed 121 Gen 30: strategy=1 objectives=(49.49, 78.75, 44.03)
+Seed 121 Gen 40: strategy=1 objectives=(49.49, 78.75, 44.03)
+Seed 121 Gen 50: strategy=1 objectives=(49.49, 78.75, 44.03)
+Seed 121: sanity_check_triggered=0 times
+Seed 131 Gen 01: strategy=1 objectives=(43.98, 67.5, 35.88)
+Seed 131 Gen 10: strategy=1 objectives=(46.06, 67.5, 43.57)
+Seed 131 Gen 20: strategy=1 objectives=(46.06, 67.5, 43.57)
+Seed 131 Gen 30: strategy=1 objectives=(49.0, 95.75, 45.55)
+Seed 131 Gen 40: strategy=1 objectives=(49.0, 95.75, 45.55)
+Seed 131 Gen 50: strategy=1 objectives=(49.0, 95.75, 45.55)
+Seed 131: sanity_check_triggered=0 times
+Seed 141 Gen 01: strategy=1 objectives=(54.34, 67.5, 34.88)
+Seed 141 Gen 10: strategy=1 objectives=(40.66, 84.46, 40.74)
+Seed 141 Gen 20: strategy=1 objectives=(47.13, 82.81, 42.35)
+Seed 141 Gen 30: strategy=1 objectives=(47.13, 82.81, 42.35)
+Seed 141 Gen 40: strategy=1 objectives=(47.13, 82.81, 42.35)
+Seed 141 Gen 50: strategy=1 objectives=(43.34, 83.88, 42.69)
+Seed 141: sanity_check_triggered=0 times
+Seed 151 Gen 01: strategy=1 objectives=(41.8, 71.47, 35.98)
+Seed 151 Gen 10: strategy=1 objectives=(55.08, 85.89, 42.07)
+Seed 151 Gen 20: strategy=1 objectives=(55.08, 85.89, 42.07)
+Seed 151 Gen 30: strategy=1 objectives=(45.41, 96.48, 45.01)
+Seed 151 Gen 40: strategy=1 objectives=(46.04, 81.2, 41.13)
+Seed 151 Gen 50: strategy=1 objectives=(48.05, 93.54, 46.28)
+Seed 151: sanity_check_triggered=0 times
+Seed 161 Gen 01: strategy=1 objectives=(45.17, 68.64, 35.55)
+Seed 161 Gen 10: strategy=1 objectives=(44.37, 94.45, 42.49)
+Seed 161 Gen 20: strategy=1 objectives=(42.3, 97.38, 40.56)
+Seed 161 Gen 30: strategy=1 objectives=(42.3, 97.38, 40.56)
+Seed 161 Gen 40: strategy=1 objectives=(51.1, 84.29, 42.08)
+Seed 161 Gen 50: strategy=1 objectives=(51.1, 84.29, 42.08)
+Seed 161: sanity_check_triggered=0 times
+Seed 171 Gen 01: strategy=1 objectives=(47.67, 94.58, 33.12)
+Seed 171 Gen 10: strategy=1 objectives=(46.37, 91.24, 47.25)
+Seed 171 Gen 20: strategy=1 objectives=(46.37, 91.24, 47.25)
+Seed 171 Gen 30: strategy=1 objectives=(46.37, 91.24, 47.25)
+Seed 171 Gen 40: strategy=1 objectives=(46.37, 91.24, 47.25)
+Seed 171 Gen 50: strategy=1 objectives=(46.37, 91.24, 47.25)
+Seed 171: sanity_check_triggered=0 times
+Seed 181 Gen 01: strategy=1 objectives=(32.41, 83.39, 38.48)
+Seed 181 Gen 10: strategy=1 objectives=(49.38, 73.59, 46.01)
+Seed 181 Gen 20: strategy=1 objectives=(49.38, 73.59, 46.01)
+Seed 181 Gen 30: strategy=1 objectives=(49.38, 73.59, 46.01)
+Seed 181 Gen 40: strategy=1 objectives=(49.38, 73.59, 46.01)
+Seed 181 Gen 50: strategy=1 objectives=(49.38, 73.59, 46.01)
+Seed 181: sanity_check_triggered=0 times
+Seed 191 Gen 01: strategy=1 objectives=(39.7, 76.99, 40.46)
+Seed 191 Gen 10: strategy=1 objectives=(48.76, 74.74, 42.55)
+Seed 191 Gen 20: strategy=1 objectives=(44.83, 76.99, 42.1)
+Seed 191 Gen 30: strategy=1 objectives=(43.27, 84.13, 43.38)
+Seed 191 Gen 40: strategy=1 objectives=(43.27, 84.13, 43.38)
+Seed 191 Gen 50: strategy=1 objectives=(48.08, 91.69, 44.73)
+Seed 191: sanity_check_triggered=0 times
+Seed 201 Gen 01: strategy=1 objectives=(49.83, 77.55, 35.81)
+Seed 201 Gen 10: strategy=1 objectives=(43.48, 89.83, 43.38)
+Seed 201 Gen 20: strategy=1 objectives=(41.32, 96.44, 45.76)
+Seed 201 Gen 30: strategy=1 objectives=(44.28, 76.57, 42.35)
+Seed 201 Gen 40: strategy=1 objectives=(48.51, 87.68, 45.42)
+Seed 201 Gen 50: strategy=1 objectives=(48.51, 87.68, 45.42)
+Seed 201: sanity_check_triggered=0 times
+Seed 211 Gen 01: strategy=1 objectives=(40.14, 67.5, 37.93)
+Seed 211 Gen 10: strategy=1 objectives=(42.35, 94.64, 45.41)
+Seed 211 Gen 20: strategy=1 objectives=(42.35, 94.64, 45.41)
+Seed 211 Gen 30: strategy=1 objectives=(49.24, 88.14, 42.18)
+Seed 211 Gen 40: strategy=1 objectives=(49.24, 88.14, 42.18)
+Seed 211 Gen 50: strategy=1 objectives=(49.24, 88.14, 42.18)
+Seed 211: sanity_check_triggered=0 times
+Seed 11 Pareto stats: count=50 struct=(0.0,99.6) pres=(78.9,97.5) util=(11.0,92.8)
+Seed 22 Pareto stats: count=50 struct=(0.0,99.5) pres=(69.6,97.5) util=(11.0,92.8)
+Seed 33 Pareto stats: count=50 struct=(0.0,99.5) pres=(72.0,97.5) util=(11.0,92.8)
+Seed 44 Pareto stats: count=50 struct=(0.0,99.5) pres=(73.1,97.5) util=(11.0,92.8)
+Seed 55 Pareto stats: count=50 struct=(0.0,99.5) pres=(67.9,97.5) util=(11.0,92.8)
+Seed 66 Pareto stats: count=50 struct=(0.0,99.5) pres=(71.2,97.5) util=(11.0,92.8)
+Seed 77 Pareto stats: count=49 struct=(0.0,99.5) pres=(78.3,97.5) util=(11.0,92.8)
+Seed 88 Pareto stats: count=50 struct=(0.0,99.5) pres=(63.1,97.5) util=(11.0,92.8)
+Seed 99 Pareto stats: count=50 struct=(0.0,99.5) pres=(76.4,97.5) util=(11.0,92.8)
+Seed 111 Pareto stats: count=50 struct=(0.0,99.5) pres=(75.5,97.5) util=(11.0,92.8)
+Seed 121 Pareto stats: count=50 struct=(0.0,99.5) pres=(75.5,97.5) util=(11.0,92.8)
+Seed 131 Pareto stats: count=50 struct=(0.0,99.5) pres=(70.6,97.5) util=(11.0,92.8)
+Seed 141 Pareto stats: count=50 struct=(0.0,99.5) pres=(67.5,97.5) util=(11.0,92.8)
+Seed 151 Pareto stats: count=50 struct=(0.0,99.5) pres=(79.6,97.5) util=(11.0,92.8)
+Seed 161 Pareto stats: count=50 struct=(0.0,99.5) pres=(68.5,97.5) util=(11.0,92.8)
+Seed 171 Pareto stats: count=50 struct=(0.0,99.5) pres=(68.0,97.5) util=(11.0,92.8)
+Seed 181 Pareto stats: count=50 struct=(0.0,99.5) pres=(73.6,97.5) util=(11.0,92.8)
+Seed 191 Pareto stats: count=50 struct=(0.0,99.6) pres=(75.0,97.5) util=(11.0,92.8)
+Seed 201 Pareto stats: count=50 struct=(0.0,99.5) pres=(77.1,97.5) util=(11.0,92.8)
+Seed 211 Pareto stats: count=50 struct=(0.0,99.5) pres=(68.8,97.5) util=(11.0,92.8)
+
+=== Consultant Report ===
+Building: Two-story unreinforced masonry (URM) with basement in FEMA AE Zone
+Selected Strategy: Dry Floodproofing (Removable Barrier)
+Selected Genes: protection_height=0.73 m, visual_impact_factor=0.55
+Selected Objectives: Structural=50.1, Preservation=79.5, Utility=47.4
+No-Measure Baseline: Structural=3.5, Preservation=10.5, Utility=2.7
+Trade-off Rationale: We selected Strategy 1 because although Strategy Dry Floodproofing (Sealant/Coating) can block more water in idealized cases, it violates NPS Standard 9 risk boundaries by increasing irreversible masonry moisture/salt damage.
+
+Pareto points exported: 999
+Total runtime: 308.3s
+Saved: moga_pareto_data.json
+Saved: /home/claude/visualizations/spatial_strategy_0_depth_grid.png
+Saved: /home/claude/visualizations/spatial_strategy_1_depth_grid.png
+Saved: /home/claude/visualizations/spatial_strategy_2_depth_grid.png
+Saved: /home/claude/visualizations/spatial_baseline_no_measures.png
+Saved: /home/claude/visualizations/spatial_depth_summary.png
+Saved: /home/claude/visualizations/seed_envelope.png
+Saved: /home/claude/visualizations/pareto_fronts_multiseed.png
+Saved: /home/claude/visualizations/pareto_pair_structural_preservation.png
+Saved: /home/claude/visualizations/pareto_pair_structural_utility.png
+Saved: /home/claude/visualizations/pareto_pair_preservation_utility.png
+Saved: /home/claude/visualizations/generation_trends_multiseed.png

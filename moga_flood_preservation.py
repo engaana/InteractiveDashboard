@@ -706,7 +706,7 @@ def plot_strategy_depth_summary(summary: List[Tuple[str, float, float]], out_pat
     plt.close(fig)
 
 
-def plot_pairwise_fronts(pareto_fronts: Dict[int, List[DesignCandidate]], out_dir: str, winner: "DesignCandidate | None" = None) -> List[str]:
+def plot_pairwise_fronts(pareto_fronts: Dict[int, List[DesignCandidate]], out_dir: str) -> List[str]:
     # Combine all Pareto points across seeds for visualization.
     points = []
     for front in pareto_fronts.values():
@@ -738,19 +738,6 @@ def plot_pairwise_fronts(pareto_fronts: Dict[int, List[DesignCandidate]], out_di
                 edgecolors="white",
                 linewidths=0.3,
             )
-        # Plot consensus winner as a gold star
-        if winner is not None and winner.objectives:
-            ax.scatter(
-                [winner.objectives[xi]],
-                [winner.objectives[yi]],
-                s=320,
-                marker="*",
-                c="#fbbf24",
-                edgecolors="#0b1120",
-                linewidths=1.2,
-                zorder=10,
-                label="Consensus Winner",
-            )
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
         ax.set_title(f"Pairwise Pareto Projection: {x_label} vs {y_label}")
@@ -762,103 +749,6 @@ def plot_pairwise_fronts(pareto_fronts: Dict[int, List[DesignCandidate]], out_di
         plt.close(fig)
         out_paths.append(out_path)
     return out_paths
-
-
-def plot_3d_pareto(
-    pareto_fronts: Dict[int, List[DesignCandidate]],
-    winner: DesignCandidate,
-    out_path: str,
-    elev: float = 25.0,
-    azim: float = -50.0,
-) -> None:
-    """Generate a 3D scatter plot of all Pareto-front candidates across seeds."""
-    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
-
-    points: List[DesignCandidate] = []
-    for front in pareto_fronts.values():
-        points.extend(front)
-    if not points:
-        return
-
-    fig = plt.figure(figsize=(10, 7.5))
-    ax = fig.add_subplot(111, projection="3d")
-    fig.patch.set_facecolor("#0b1120")
-    ax.set_facecolor("#0b1120")
-
-    # Style panes
-    ax.xaxis.pane.set_facecolor("#111827")
-    ax.yaxis.pane.set_facecolor("#131b2e")
-    ax.zaxis.pane.set_facecolor("#0f172a")
-    ax.xaxis.pane.set_edgecolor("#1e293b")
-    ax.yaxis.pane.set_edgecolor("#1e293b")
-    ax.zaxis.pane.set_edgecolor("#1e293b")
-    ax.xaxis.pane.set_alpha(0.9)
-    ax.yaxis.pane.set_alpha(0.9)
-    ax.zaxis.pane.set_alpha(0.9)
-
-    # Grid & tick styling
-    ax.grid(alpha=0.12, color="#475569")
-    ax.tick_params(colors="#64748b", labelsize=7)
-    ax.xaxis.label.set_color("#94a3b8")
-    ax.yaxis.label.set_color("#94a3b8")
-    ax.zaxis.label.set_color("#94a3b8")
-
-    # Plot each strategy
-    for s in range(3):
-        subset = [c for c in points if c.intervention_strategy == s]
-        if not subset:
-            continue
-        xs = [c.objectives[0] for c in subset]
-        ys = [c.objectives[1] for c in subset]
-        zs = [c.objectives[2] for c in subset]
-        ax.scatter(
-            xs, ys, zs,
-            s=22,
-            c=STRATEGY_COLORS[s],
-            alpha=0.55,
-            label=f"Strategy {s}",
-            edgecolors="white",
-            linewidths=0.2,
-            depthshade=True,
-        )
-
-    # Winner star
-    if winner and winner.objectives:
-        wx, wy, wz = winner.objectives
-        ax.scatter(
-            [wx], [wy], [wz],
-            s=350,
-            marker="*",
-            c="#fbbf24",
-            edgecolors="#0b1120",
-            linewidths=1.5,
-            zorder=10,
-            label=f"Winner: S{winner.intervention_strategy}",
-            depthshade=False,
-        )
-        ax.text(
-            wx + 2, wy + 1, wz + 2,
-            f"S{winner.intervention_strategy} "
-            f"({wx:.0f}, {wy:.0f}, {wz:.0f})",
-            fontsize=8, fontweight="bold", color="#fbbf24",
-        )
-
-    ax.set_xlabel("Structural", fontsize=10, labelpad=8)
-    ax.set_ylabel("Preservation", fontsize=10, labelpad=8)
-    ax.set_zlabel("Utility", fontsize=10, labelpad=8)
-    ax.set_title(
-        "3D Pareto Front — All Seeds",
-        fontsize=14, fontweight="bold", color="#e2e8f0", pad=16,
-    )
-    ax.view_init(elev=elev, azim=azim)
-    ax.legend(
-        fontsize=8, loc="upper left",
-        facecolor="#1e293b", edgecolor="#334155",
-        labelcolor="#e2e8f0",
-    )
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=200, facecolor="#0b1120", bbox_inches="tight")
-    plt.close(fig)
 
 def baseline_no_measures() -> Tuple[float, float, float]:
     # Scenario-based baseline no-measures score.
@@ -930,16 +820,8 @@ def generate_visualizations(
     plot_pareto_fronts_by_seed(pareto_fronts, winner, populations, p2b)
     paths.append(p2b)
 
-    pairwise_paths = plot_pairwise_fronts(pareto_fronts, out_dir, winner=winner)
+    pairwise_paths = plot_pairwise_fronts(pareto_fronts, out_dir)
     paths.extend(pairwise_paths)
-
-    p3d = os.path.join(out_dir, "pareto_3d.png")
-    plot_3d_pareto(pareto_fronts, winner, p3d, elev=25, azim=-50)
-    paths.append(p3d)
-
-    p3d2 = os.path.join(out_dir, "pareto_3d_alt.png")
-    plot_3d_pareto(pareto_fronts, winner, p3d2, elev=15, azim=-130)
-    paths.append(p3d2)
 
     p3 = os.path.join(out_dir, "generation_trends_multiseed.png")
     plot_generation_trends(history_by_seed, p3)
