@@ -7,3 +7,12 @@ desktop.ini
 _to_delete/
 *.log
 ~$*
+
+# dashboard build artefacts
+interactive_dashboard_backup_*.html
+interactive_dashboard_prelink_*.html
+interactive_dashboard_original_git.html
+_github_upload/
+Claude outputs/
+fem_exports/
+FEM_frame_model_sketch.png

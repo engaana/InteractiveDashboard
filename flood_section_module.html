@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Flood Loads — Building Cross-Section (ASCE 7-22 S2)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+:root{--bg:#f8fafc;--card:#fff;--border:rgba(148,163,184,.32);--ink:#0f172a;--muted:#475569;--dim:#64748b;--accent:#0284c7;--accent2:#6366f1;--green:#059669;--red:#dc2626;--amber:#d97706;--cyan:#0891b2;--radius:16px;--glow:0 1px 3px rgba(15,23,42,.06),0 4px 16px rgba(15,23,42,.05)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);padding:16px 20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px 16px;box-shadow:var(--glow);max-width:1360px;margin:0 auto}
+h2{font-size:1rem;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:7px}
+h2::before{content:'';width:3px;height:18px;background:linear-gradient(180deg,var(--accent),var(--accent2));border-radius:3px}
+.src-badge{font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:999px;margin-left:8px;letter-spacing:.02em}
+.src-js{background:rgba(5,150,105,.12);color:var(--green)}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.head .presets{display:none}
+.head .sub{font-size:.72rem;color:var(--dim)}
+/* KPI strip */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.kpi{border:1px solid var(--border);border-radius:12px;padding:9px 12px;background:#fff;border-left:4px solid var(--c,#94a3b8)}
+.kpi .kl{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .kv{font-size:1.2rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--c,var(--ink));line-height:1.25}
+.kpi .ks{font-size:.64rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* main grid */
+.main{display:grid;grid-template-columns:300px minmax(0,1fr);gap:14px;align-items:start}
+/* inputs */
+.panel{border:1px solid var(--border);border-radius:14px;background:#fff;overflow:hidden}
+.tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border)}
+.tab{flex:1;font:inherit;font-size:.66rem;font-weight:700;padding:9px 4px;border:0;background:transparent;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.02em}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent);background:#fff}
+.tabp{display:none;padding:12px 14px 10px;flex-direction:column;gap:8px}
+.tabp.on{display:flex}
+.sec{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);margin:4px 0 0}
+.cg{display:flex;flex-direction:column;gap:2px}
+.cg label{font-size:.7rem;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
+.cg label>span:first-child{white-space:nowrap}
+.cg label .sv{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700;text-align:right}
+.cg input[type=range]{width:100%;accent-color:var(--accent);height:4px}
+.cg select{font:inherit;font-size:.7rem;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--ink);width:100%}
+.toggle{display:flex;align-items:center;gap:8px;font-size:.74rem;font-weight:700;color:var(--ink);cursor:pointer;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--bg)}
+.toggle input{accent-color:var(--accent);width:16px;height:16px}
+.toggle small{font-weight:500;color:var(--dim);display:block;font-size:.64rem}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+.two .cg label{flex-direction:column;align-items:flex-start;gap:0}
+.two .cg label .sv{text-align:left;font-size:.72rem}
+/* center */
+.center{display:flex;flex-direction:column;gap:10px;min-width:0}
+.fl-svg{width:100%;height:auto;display:block;border:1px solid var(--border);border-radius:14px;background:#fff}
+.selbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.selbar .lbl{font-size:.72rem;font-weight:800;color:var(--ink)}
+.selbar .lbl small{font-weight:500;color:var(--dim);margin-left:6px;font-size:.66rem}
+.presets{display:flex;gap:5px;flex-wrap:wrap}
+.preset{font:inherit;font-size:.64rem;font-weight:700;padding:5px 10px;border-radius:999px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;transition:all .15s}
+.preset:hover{border-color:var(--accent);color:var(--accent)}
+.preset.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tile{position:relative;border:2px solid var(--border);border-radius:12px;padding:10px 12px;cursor:pointer;background:#fff;transition:all .18s;user-select:none;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 10px;align-items:center}
+.tile .ic{grid-area:1/1}.tile>div:nth-child(2){grid-area:1/2}.tile .chk{grid-area:1/3}
+.tile>div:nth-child(3){grid-area:2/1/3/4;display:flex;justify-content:flex-end;align-items:baseline;gap:6px;border-top:1px dashed var(--border);padding-top:6px}
+.tile:hover{transform:translateY(-1px);box-shadow:var(--glow)}
+.tile.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 7%,#fff)}
+.tile .chk{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);display:grid;place-items:center;font-size:11px;color:#fff;transition:all .18s}
+.tile.on .chk{background:var(--c);border-color:var(--c)}
+.tile .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);font-weight:900}
+.tile .tn{font-size:.7rem;font-weight:800;color:var(--ink);line-height:1.2}
+.tile .ts{font-size:.6rem;color:var(--dim);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .tv{font-size:1.05rem;font-weight:800;color:var(--c);font-variant-numeric:tabular-nums;line-height:1.1}
+.tile .tu{font-size:.58rem;color:var(--dim);text-align:right}
+.tile.off .tv{color:var(--dim)}
+.fa-eq{font-size:.74rem;font-weight:600;color:var(--ink);background:var(--bg);border-radius:12px;padding:9px 14px;font-variant-numeric:tabular-nums;line-height:1.6}
+.fa-eq .t{color:var(--c);font-weight:800}.fa-eq .mut{color:var(--dim);font-weight:500}
+/* right */
+.right{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:12px;align-items:stretch}
+@media(max-width:900px){.main{grid-template-columns:1fr}.right{grid-template-columns:1fr}}
+.total{border-radius:14px;padding:16px 18px;justify-content:center;background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;display:flex;flex-direction:column;gap:7px}
+.total .kl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8}
+.total .big{font-size:2.4rem;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.05}
+.total .big small{font-size:.8rem;font-weight:600;color:#94a3b8;margin-left:4px}
+.total .row{display:flex;justify-content:space-between;font-size:.7rem;color:#cbd5e1;border-top:1px solid rgba(255,255,255,.1);padding-top:6px;gap:8px}
+.total .row b{color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dcr{display:flex;align-items:center;gap:10px}
+.dcr .pill{padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:800;white-space:nowrap}
+.dcr input[type=range]{flex:1;accent-color:#38bdf8}
+.total label{font-size:.62rem;color:#94a3b8;display:flex;justify-content:space-between;gap:6px}
+.stack{border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:9px;background:#fff}
+.stack .kl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--dim)}
+.bar{display:flex;height:20px;border-radius:7px;overflow:hidden;background:var(--bg)}
+.bar div{height:100%;transition:width .3s;display:grid;place-items:center;color:#fff;font-size:.6rem;font-weight:700;white-space:nowrap;overflow:hidden}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:.64rem;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+table.mt{width:100%;border-collapse:collapse;font-size:.66rem}
+table.mt th{text-align:right;font-weight:700;color:var(--dim);padding:3px 3px;border-bottom:1px solid var(--border);font-size:.58rem;text-transform:uppercase;letter-spacing:.03em}
+table.mt th:first-child,table.mt td:first-child{text-align:left}
+table.mt td{text-align:right;padding:4px 3px;font-variant-numeric:tabular-nums;color:var(--ink);vertical-align:top;white-space:nowrap}
+table.mt td:first-child{white-space:normal}
+table.mt td span{display:block;color:var(--dim);font-size:.58rem}
+table.mt tr.off td{color:#cbd5e1;text-decoration:line-through}
+table.mt tr.tot td{font-weight:800;border-top:2px solid var(--border)}
+/* FEM export */
+.fem{margin-top:14px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(135deg,#f8fafc,#eef2ff);padding:12px 14px}
+.fem-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.fem-head b{font-size:.82rem;color:var(--ink)}.fem-head small{display:block;font-size:.66rem;color:var(--dim);margin-top:2px}
+.fem-btns{display:flex;gap:6px;flex-wrap:wrap}
+.fbtn{font:inherit;font-size:.68rem;font-weight:700;padding:7px 12px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--accent2);cursor:pointer}
+.fbtn:hover{border-color:var(--accent2);background:#f5f3ff}
+.fem-note{font-size:.64rem;color:var(--dim);margin-top:8px;line-height:1.45}
+/* details */
+details.notes{margin-top:14px;border:1px solid var(--border);border-radius:14px;background:#fff}
+details.notes summary{cursor:pointer;padding:10px 14px;font-size:.74rem;font-weight:700;color:var(--muted);list-style:none;display:flex;align-items:center;gap:8px}
+details.notes summary::before{content:'▸';color:var(--accent);transition:transform .15s}
+details.notes[open] summary::before{transform:rotate(90deg)}
+.notes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:4px 14px 14px}
+@media(max-width:1000px){.notes-grid{grid-template-columns:1fr}}
+.note{border-top:3px solid var(--c);border-radius:8px;padding:10px 12px;background:var(--bg)}
+.note h4{font-size:.7rem;font-weight:800;color:var(--c);margin-bottom:6px}
+.note .kv{font-size:.9rem;font-weight:800;font-variant-numeric:tabular-nums}
+.note .ks{font-size:.62rem;color:var(--dim);margin-bottom:4px}
+.eq{font-size:.66rem;color:var(--muted);line-height:1.5}.eq b{color:var(--ink)}
+.dim{fill:#64748b;font-size:10px;font-weight:500}.lvl{fill:#0f172a;font-size:11px;font-weight:600}.lvl2{fill:#64748b;font-size:10px}
+</style>
+</head>
+<body>
+<article class="card" id="floodSectionCard">
+  <div class="head">
+    <div><h2>Flood Loads — Building Cross-Section<span class="src-badge src-js">⚡ JS · Live</span></h2>
+      <div class="sub">ASCE/SEI 7-22 Supplement 2 · §5.4.2 hydrostatic · §5.4.3 hydrodynamic · §5.4.5 debris impact · §5.5 load cases — nominal (unfactored) F<sub>a</sub></div></div>
+  </div>
+
+  <!-- KPI strip -->
+  <div class="kpis">
+    <div class="kpi" style="--c:#0284c7"><div class="kl">Design depth d<sub>f</sub></div><div class="kv" id="oDf">—</div><div class="ks" id="oDfS"></div></div>
+    <div class="kpi" id="kZ" style="--c:#334155"><div class="kl">z · h<sub>b</sub> (basement)</div><div class="kv" id="oZ">—</div><div class="ks" id="oZS"></div></div>
+    <div class="kpi" id="kB" style="--c:#059669"><div class="kl">Slab buoyancy p<sub>B</sub></div><div class="kv" id="oPB">—</div><div class="ks" id="oPBS"></div></div>
+    <div class="kpi" style="--c:#dc2626"><div class="kl">Hydrostatic F<sub>sta</sub></div><div class="kv" id="oF">—</div><div class="ks" id="oFS"></div></div>
+    <div class="kpi" style="--c:#0891b2"><div class="kl">Hydrodynamic F<sub>dyn</sub></div><div class="kv" id="oFd">—</div><div class="ks" id="oFdS"></div></div>
+    <div class="kpi" style="--c:#d97706"><div class="kl">Debris impact F<sub>di</sub></div><div class="kv" id="oFi">—</div><div class="ks" id="oFiS"></div></div>
+  </div>
+
+  <div class="main">
+    <!-- ── inputs ──────────────────────────────────────────── -->
+    <div class="panel">
+      <div class="tabs">
+        <button class="tab on" data-tab="site">Site &amp; levels</button>
+        <button class="tab" data-tab="water">Water &amp; soil</button>
+        <button class="tab" data-tab="dyn">Hydro-dynamic</button>
+        <button class="tab" data-tab="deb">Debris &amp; panel</button>
+      </div>
+      <div class="tabp on" data-tab="site">
+        <label class="toggle"><input type="checkbox" id="fBsmt" checked /><span>Basement<small>dry floodproofed — water excluded (Fig. 5B)</small></span></label>
+        <div class="sec">Flood levels (ft NAVD88)</div>
+        <div class="cg"><label><span>SWEL<sub>MRI</sub></span> <span class="sv" id="vSWEL"></span></label><input type="range" id="fSWEL" min="596" max="612" step="0.05" value="604.05"></div>
+        <div class="cg"><label><span>Ground elevation G<sub>e</sub></span> <span class="sv" id="vGe"></span></label><input type="range" id="fGe" min="590" max="606" step="0.1" value="597"></div>
+        <div class="sec">Building levels</div>
+        <div class="two">
+          <div class="cg"><label><span>1st floor FFE (ft)</span> <span class="sv" id="vFFE"></span></label><input type="range" id="fFFE" min="592" max="610" step="0.1" value="602.2"></div>
+          <div class="cg" id="gBsmt"><label><span>Basement EL (ft)</span> <span class="sv" id="vBE"></span></label><input type="range" id="fBE" min="584" max="604" step="0.1" value="593"></div>
+          <div class="cg"><label><span>Storeys</span> <span class="sv" id="vN"></span></label><input type="range" id="fN" min="1" max="4" step="1" value="2"></div>
+          <div class="cg"><label><span>Storey height</span> <span class="sv" id="vHs"></span></label><input type="range" id="fHs" min="2.4" max="5" step="0.05" value="3.0"></div>
+        </div>
+        <div class="sec">Plan dimensions (m)</div>
+        <div class="two">
+          <div class="cg"><label><span>Width B (flood-facing)</span> <span class="sv" id="vB"></span></label><input type="range" id="fB" min="5" max="40" step="0.1" value="18.3"></div>
+          <div class="cg"><label><span>Length L<sub>b</sub></span> <span class="sv" id="vL"></span></label><input type="range" id="fL" min="5" max="60" step="0.1" value="30"></div>
+        </div>
+        <div class="sec">Building loads — flood-moment analysis: self-weight only (sliders at 0)</div>
+        <div class="two">
+          <div class="cg"><label><span>Floor superimposed DL (kPa)</span> <span class="sv" id="vDL"></span></label><input type="range" id="fDL" min="0" max="6" step="0.1" value="0"></div>
+          <div class="cg"><label><span>Floor live load (kPa)</span> <span class="sv" id="vLL"></span></label><input type="range" id="fLL" min="0" max="7.5" step="0.1" value="0"></div>
+          <div class="cg"><label><span>Roof superimposed DL / snow (kPa)</span> <span class="sv" id="vRL"></span></label><input type="range" id="fRL" min="0" max="6" step="0.1" value="0"></div>
+          <div class="cg"><label><span>Span between walls (m)</span> <span class="sv" id="vTrib"></span></label><input type="range" id="fTrib" min="2" max="15" step="0.1" value="6"></div>
+          <div class="cg"><label><span>γ<sub>masonry</sub> (kN/m³)</span> <span class="sv" id="vGm"></span></label><input type="range" id="fGm" min="14" max="22" step="0.5" value="18"></div>
+          <div class="cg"><label><span>Top slab thickness (m)</span> <span class="sv" id="vTs"></span></label><input type="range" id="fTs" min="0.05" max="0.4" step="0.01" value="0.2"></div>
+          <div class="cg"><select id="fSlab"><option value="concrete">Top slab: reinforced concrete (E 25 GPa, 2400 kg/m³)</option><option value="timber">Top diaphragm: timber equivalent plate (E 10 GPa, 600 kg/m³)</option></select></div>
+          <div class="cg"><label><span>σ<sub>v</sub> at grade (computed)</span> <span class="sv" id="vSv"></span></label></div>
+        </div>
+      </div>
+      <div class="tabp" data-tab="water">
+        <div class="sec">Water — §5.4.2 specific weight γ<sub>w</sub></div>
+        <div class="cg"><select id="fWater">
+          <option value="9.81">Freshwater — 62.4 pcf · 9.81 kN/m³ (riverine)</option>
+          <option value="10.03">Saltwater — 64 pcf · 10.03 kN/m³ (coastal)</option>
+        </select></div>
+        <div class="cg"><label><span>ρ<sub>w</sub> (follows γ<sub>w</sub>, §5.4.3.1)</span> <span class="sv" id="vRho"></span></label></div>
+        <div class="sec">Submerged soil — ASCE 7-22 Table 3.2-1 (γ<sub>s</sub>)</div>
+        <div class="cg"><select id="fSoil">
+          <option value="11.78">Clean sand &amp; gravel (GW, GP, SW, SP) — 75 pcf · 11.78 kN/m³</option>
+          <option value="12.10">Dirty sand &amp; gravel, restricted permeability (GM, GM-GP, SM, SM-SP) — 77 pcf · 12.10</option>
+          <option value="12.88">Stiff residual silts/clays, silty fine sands, clayey sands &amp; gravels (CL, ML, CH, MH, SM, SC, GC) — 82 pcf · 12.88</option>
+          <option value="16.65">Very soft to soft clay, silty clay, organic silt &amp; clay (CL, ML, OL, CH, MH, OH) — 106 pcf · 16.65</option>
+          <option value="22.31">Medium to stiff clay in chunks, protected from infiltration (CL, CH) — 142 pcf · 22.31</option>
+        </select></div>
+        <div class="eq" style="margin-top:4px">γ<sub>s</sub> is the equivalent fluid weight of submerged soil + water; only the differential (γ<sub>s</sub> − γ<sub>w</sub>) is added over the below-grade height h<sub>b</sub>. Below-grade soils are assumed fully saturated (§5.4.2) unless a seepage analysis per §5.4.2.3 is made.</div>
+      </div>
+      <div class="tabp" data-tab="dyn">
+        <div class="sec">Hydrodynamic — §5.4.3.2, Eq. 5.4-5</div>
+        <div class="cg"><label><span>Design flood velocity V</span> <span class="sv" id="vV"></span></label><input type="range" id="fV" min="0.3" max="8" step="0.05" value="1.85"></div>
+        <div class="cg"><select id="fCdMode">
+          <option value="auto">Cd automatic — Table 5.4-2 from B/df</option>
+          <option value="manual">Cd manual</option>
+        </select></div>
+        <div class="cg" id="gCd"><label><span>C<sub>d</sub></span> <span class="sv" id="vCd"></span></label><input type="range" id="fCd" min="1.0" max="2.5" step="0.05" value="1.25"></div>
+        <div class="eq" style="margin-top:4px">Table 5.4-2: C<sub>d</sub> = 1.25 for B/d<sub>f</sub> ≤ 12, 2.0 for B/d<sub>f</sub> ≥ 120, linear between. d<sub>f</sub> is capped at the structure height. B and d<sub>f</sub> come from the Site tab; ρ follows the water selection.</div>
+      </div>
+      <div class="tabp" data-tab="deb">
+        <div class="sec">Debris — §5.4.5, Eq. 5.4-20</div>
+        <div class="cg"><select id="fDeb">
+          <option value="log">Wood log / pole — 1,000 lb · 4.45 kN · k = 61,294 kN/m</option>
+          <option value="veh">Passenger vehicle — 2,400 lb · 10.68 kN · k = 1,051 kN/m</option>
+          <option value="ves">Small vessel — 2,500 lb · 11.1 kN · k = 5,250 kN/m</option>
+          <option value="custom">Custom debris (set W and k)</option>
+        </select></div>
+        <div class="two">
+          <div class="cg" id="gWd"><label><span>W<sub>deb</sub></span> <span class="sv" id="vWd"></span></label><input type="range" id="fWd" min="1" max="40" step="0.05" value="4.45"></div>
+          <div class="cg" id="gKd"><label><span>k<sub>deb</sub></span> <span class="sv" id="vKd"></span></label><input type="range" id="fKd" min="500" max="100000" step="100" value="61294"></div>
+          <div class="cg"><label><span>Orientation C<sub>o</sub></span> <span class="sv" id="vCo"></span></label><input type="range" id="fCo" min="0.5" max="1" step="0.01" value="0.8"></div>
+          <div class="cg"><label><span>C<sub>R</sub> (auto, d<sub>f</sub>)</span> <span class="sv" id="vCR"></span></label></div>
+        </div>
+        <div class="cg"><select id="fCsMode">
+          <option value="lb">Cs = 1.0 — load-bearing element (URM wall)</option>
+          <option value="manual">Cs manual — non-load-bearing (Table 5.4-3)</option>
+        </select></div>
+        <div class="cg" id="gCs"><label><span>C<sub>s</sub></span> <span class="sv" id="vCs"></span></label><input type="range" id="fCs" min="0" max="1" step="0.01" value="1"></div>
+        <div class="sec">Impacted URM panel — k<sub>e</sub></div>
+        <div class="cg"><select id="fKe">
+          <option value="series">ke = series (debris + panel)</option>
+          <option value="debris">ke = k_deb only (rigid element)</option>
+        </select></div>
+        <div class="two">
+          <div class="cg"><label><span>E<sub>m</sub></span> <span class="sv" id="vEm"></span></label><input type="range" id="fEm" min="0.5" max="15" step="0.1" value="5"></div>
+          <div class="cg"><label><span>t<sub>w</sub></span> <span class="sv" id="vTw"></span></label><input type="range" id="fTw" min="0.15" max="0.8" step="0.01" value="0.35"></div>
+          <div class="cg"><label><span>Span L</span> <span class="sv" id="vLp"></span></label><input type="range" id="fLp" min="1" max="6" step="0.05" value="3.5"></div>
+          <div class="cg"><label><span>b<sub>eff</sub></span> <span class="sv" id="vBe"></span></label><input type="range" id="fBe" min="0.5" max="3" step="0.05" value="1"></div>
+        </div>
+        <div class="cg"><select id="fKbc">
+          <option value="48">Simply supported — K = 48</option>
+          <option value="192">Fixed–fixed — K = 192</option>
+          <option value="107">Fixed–pinned — K ≈ 107</option>
+          <option value="3">Cantilever — K = 3</option>
+        </select></div>
+      </div>
+    </div>
+
+    <!-- ── drawing + load selection ────────────────────────── -->
+    <div class="center">
+      <svg id="fSvg" class="fl-svg" viewBox="0 0 1000 540" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="selbar"><div class="lbl">Loads in F<sub>a</sub><small>click a load to include / exclude, or pick a case</small></div><div class="presets">
+      <button class="preset" data-set="100">Hydrostatic only</button>
+      <button class="preset" data-set="010">Hydrodynamic only</button>
+      <button class="preset" data-set="001">Debris only</button>
+      <button class="preset" data-set="110">LC1 · sustained</button>
+      <button class="preset" data-set="111">LC2 · impact</button>
+    </div></div>
+      <div class="tiles">
+        <div class="tile on" id="tSta" style="--c:#dc2626" data-k="sta"><div class="ic">≡</div><div><div class="tn">Hydrostatic F<sub>sta</sub></div><div class="ts">§5.4.2 · triangular · at z<sub>sta</sub></div></div><div><div class="tv" id="tvSta">—</div><div class="tu">kN/m</div></div><div class="chk">✓</div></div>
+        <div class="tile on" id="tDyn" style="--c:#0891b2" data-k="dyn"><div class="ic">→</div><div><div class="tn">Hydrodynamic F<sub>dyn</sub>/B</div><div class="ts">§5.4.3 · uniform · at d<sub>f</sub>/2</div></div><div><div class="tv" id="tvDyn">—</div><div class="tu">kN/m</div></div><div class="chk">✓</div></div>
+        <div class="tile on" id="tDi" style="--c:#d97706" data-k="di"><div class="ic">●</div><div><div class="tn">Debris F<sub>di</sub>/b<sub>eff</sub></div><div class="ts">§5.4.5 · point · at min(d<sub>f</sub>, L/2)</div></div><div><div class="tv" id="tvDi">—</div><div class="tu">kN/m</div></div><div class="chk">✓</div></div>
+      </div>
+      <div class="fa-eq" id="faEq"></div>
+    <!-- ── Fa result ────────────────────────────────────────── -->
+      <div class="right">
+      <div class="total">
+        <div class="kl" id="faName">F<sub>a</sub></div>
+        <div class="big" id="faF">—<small>kN/m</small></div>
+        <div class="row"><span>Moment demand M<sub>Fa</sub></span><b id="faM">—</b></div>
+        <div class="row"><span>Capacity M<sub>cap</sub> = f<sub>t</sub>·t<sub>w</sub>²/6</span><b id="faMc">—</b></div>
+        <label><span>f<sub>t</sub> — URM flexural tensile strength (placeholder)</span><span id="vFt"></span></label>
+        <div class="dcr"><input type="range" id="fFt" min="50" max="1500" step="10" value="200"><span class="pill" id="faDCR">—</span></div>
+      </div>
+      <div class="stack">
+        <div class="kl">Out-of-plane moment · M = F·y·(L − y)/L</div>
+        <div class="bar" id="mBar"></div>
+        <div class="legend"><span><i style="background:#dc2626"></i>M<sub>sta</sub></span><span><i style="background:#0891b2"></i>M<sub>dyn</sub></span><span><i style="background:#d97706"></i>M<sub>imp</sub></span></div>
+        <table class="mt"><thead><tr><th>Load</th><th>F kN/m</th><th>y m</th><th>M kN·m/m</th><th>%</th></tr></thead><tbody id="mBody"></tbody></table>
+      </div>
+    </div>
+    </div>
+
+  </div>
+
+  <!-- ── calculation notes ─────────────────────────────────── -->
+  <div class="fem" id="femExport">
+    <div class="fem-head"><div><b>Export to FEM</b><small>flood-facing wall + rear wall + a slab at every floor and at the roof, self-weight only by default (superimposed loads optional), with levels, supports and the flood loads selected in F<sub>a</sub> — SI units (N, m, Pa)</small></div>
+      <div class="fem-btns"><button class="fbtn" data-x="json">⬇ model.json</button><button class="fbtn" data-x="abq">⬇ Abaqus/CAE script (.py)</button><button class="fbtn" data-x="diana">⬇ DIANA script (.py)</button></div></div>
+    <div class="fem-note" id="femNote"></div>
+  </div>
+  <details class="notes">
+    <summary>Calculation notes &amp; equations (per load)</summary>
+    <div class="notes-grid">
+      <div class="note" style="--c:#dc2626"><h4>Hydrostatic — §5.4.2</h4><div class="ks">resultant height z<sub>sta</sub></div><div class="kv" id="oZs">—</div><div class="ks" id="oZsS"></div><div class="eq" id="oEq"></div></div>
+      <div class="note" style="--c:#0891b2"><h4>Hydrodynamic — §5.4.3.2</h4><div class="ks">C<sub>d</sub> · B/d<sub>f</sub> · z<sub>dyn</sub></div><div class="kv" id="oCd">—</div><div class="ks" id="oCdS"></div><div class="eq" id="oEqD"></div></div>
+      <div class="note" style="--c:#d97706"><h4>Debris impact — §5.4.5</h4><div class="ks">k<sub>panel</sub> · k<sub>e</sub> · m<sub>deb</sub></div><div class="kv" id="oKe">—</div><div class="ks" id="oKeS"></div><div class="eq" id="oEqI"></div></div>
+    </div>
+  </details>
+</article>
+<script>
+(function(){
+  const FT = 0.3048; let GW = 9.81;
+  const $ = id => document.getElementById(id);
+  const SEL = {sta:true, dyn:true, di:true};
+  const ids = ['fFt','fDL','fLL','fRL','fTrib','fGm','fTs','fSlab','fBsmt','fSWEL','fGe','fFFE','fBE','fN','fHs','fB','fL','fSoil','fWater','fV','fCdMode','fCd','fDeb','fWd','fKd','fCo','fCsMode','fCs','fKe','fEm','fTw','fLp','fBe','fKbc'];
+  const f2 = v => v.toFixed(2), f1 = v => v.toFixed(1);
+
+  // ── model ────────────────────────────────────────────────────────────────
+  function hydrostatic(SWEL, Ge, ELb, basement, gs){
+    const d_f = Math.max(SWEL - Ge, 0);
+    let d_h = d_f, h_b = 0, F_dif = 0, p_B = 0, z = 0;
+    if (basement){ z = Math.max(SWEL - ELb, 0); h_b = Math.max(Ge - ELb, 0); d_h = z;
+      F_dif = 0.5*(gs-GW)*h_b*h_b; p_B = GW*z; }
+    const F_w = 0.5*GW*d_h*d_h, F_sta = F_w + F_dif;
+    const z_sta = F_sta > 0 ? (F_w*d_h/3 + F_dif*h_b/3)/F_sta : 0;
+    const p_base = GW*d_h + (gs-GW)*h_b;
+    return {d_f, z, h_b, d_h, F_w, F_dif, F_sta, z_sta, p_base, p_B};
+  }
+
+  // Table 5.4-2: Cd = 1.25 for B/df ≤ 12, 2.0 for B/df ≥ 120, linear interpolation between
+  function cdTable(rBd){ if (rBd <= 12) return 1.25; if (rBd >= 120) return 2.0; return 1.25 + (rBd - 12) * (2.0 - 1.25) / (120 - 12); }
+  function hydrodynamic(p, d_f){
+    const rho = GW > 10 ? 1027 : 1000;                       // kg/m³, fresh / sea water (§5.4.3.1)
+    const Hs = p.FFE + p.n*p.hs - p.Ge;                       // structure height above grade
+    const d = Math.min(d_f, Math.max(Hs, 0));                 // df capped at the structure height (§5.4.3.2)
+    const rBd = d > 0 ? p.B / d : Infinity;
+    const Cd = p.cdMode === 'auto' ? cdTable(rBd) : p.Cd;
+    const p_dyn = 0.5 * rho * Cd * p.V * p.V / 1000;          // kPa, uniform over d
+    const F_dyn = p_dyn * p.B * d;                            // kN on the whole face
+    return {rho, Hs, d, rBd, Cd, p_dyn, F_dyn, f_dyn: p.B > 0 ? F_dyn / p.B : 0, z_dyn: d / 2};
+  }
+
+  const DEBRIS = { log:[4.45, 61294], veh:[10.68, 1051], ves:[11.1, 5250] };   // W (kN), k (kN/m) — S2 Table 5.4-4 / P-2345 Table 24
+  function debris(p, d_f){
+    const g = 9.81, req = d_f > 0.91;                                              // §5.3.9: required for RC III/IV when d_f > 3 ft
+    const CR = d_f >= 1.52 ? 1 : d_f < 0.30 ? 0 : (d_f - 0.30) / (1.52 - 0.30);    // depth coefficient
+    const Cs = p.csMode === 'lb' ? 1 : p.Cs;
+    const I = p.be * Math.pow(p.tw, 3) / 12;                                       // m⁴
+    const k_panel = p.Kbc * (p.Em * 1e6) * I / Math.pow(p.Lp, 3);                  // kN/m  (Em GPa → kPa)
+    const k_e = p.keMode === 'series' ? 1 / (1 / p.kd + 1 / k_panel) : p.kd;
+    const m = p.Wd * 1000 / g;                                                     // kg
+    const F_di = p.Co * p.V * CR * Cs * Math.sqrt(k_e * 1000 * m) / 1000;          // kN
+    const a = Math.min(d_f, p.Lp / 2);                                             // application height above the panel base (critical flexure, ≤ SWEL)
+    return {req, CR, Cs, I, k_panel, k_e, m, F_di, a, red: p.keMode==='series' ? 1 - k_e / p.kd : 0};
+  }
+
+  function read(){
+    const bs = $('fBsmt').checked; GW = +$('fWater').value;
+    const SWEL = +$('fSWEL').value*FT, Ge = +$('fGe').value*FT, FFE = +$('fFFE').value*FT;
+    let ELb = +$('fBE').value*FT; if (ELb > Ge - 0.3) ELb = Ge - 0.3;       // basement floor must sit below grade
+    return {bs, SWEL, Ge, FFE, ELb, n: +$('fN').value, hs: +$('fHs').value, B: +$('fB').value, L: +$('fL').value, gs: +$('fSoil').value, V: +$('fV').value, cdMode: $('fCdMode').value, Cd: +$('fCd').value,
+      deb: $('fDeb').value, Wd: +$('fWd').value, kd: +$('fKd').value, Co: +$('fCo').value, csMode: $('fCsMode').value, Cs: +$('fCs').value,
+      keMode: $('fKe').value, Em: +$('fEm').value, tw: +$('fTw').value, Lp: +$('fLp').value, be: +$('fBe').value, Kbc: +$('fKbc').value,
+      DL: +$('fDL').value, LL: +$('fLL').value, RL: +$('fRL').value, trib: +$('fTrib').value, gm: +$('fGm').value, ts: +$('fTs').value, slabMat: $('fSlab').value};
+  }
+
+  // ── drawing ──────────────────────────────────────────────────────────────
+  function draw(p, r, h, d){
+    const svg = $('fSvg'); const W = 1000, H = 540;
+    const dim = on => on ? '' : '<g opacity="0.18">', undim = on => on ? '' : '</g>';
+    const roof = p.FFE + p.n*p.hs;
+    const base = p.bs ? p.ELb : Math.min(p.Ge, p.FFE) ;          // lowest structural level
+    const yLo = Math.min(base, p.Ge) - 1.2, yHi = Math.max(roof, p.SWEL) + 0.8;
+    const top = 26, bot = H - 26, s = (bot - top)/(yHi - yLo);
+    const Y = e => bot - (e - yLo)*s;
+    const xL = 310, bw = Math.max(260, Math.min(470, p.B*18)), xR = xL + bw; // building plan width, clamped for display
+    const g = [];
+    const T = (x,y,t,cls,anchor='start') => g.push(`<text x="${x}" y="${y}" class="${cls}" text-anchor="${anchor}">${t}</text>`);
+    const line = (x1,y1,x2,y2,st) => g.push(`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ${st}/>`);
+    const rect = (x,y,w,h,st) => g.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" ${st}/>`);
+    const poly = (pts,st) => g.push(`<polygon points="${pts.map(q=>q.join(',')).join(' ')}" ${st}/>`);
+
+    // soil (outside the building, and under a slab-on-grade building)
+    const yGe = Y(p.Ge), yBase = Y(base);
+    rect(0, yGe, W, H - yGe, 'fill="#f5efe4"');
+    // flood water outside, flood-facing side (left), SWEL down to grade
+    const ySW = Y(p.SWEL);
+    if (p.SWEL > p.Ge) rect(0, ySW, xL, yGe - ySW, 'fill="rgba(2,132,199,.16)"');
+    // saturated soil band (Ge → base) on the flood-facing side
+    if (p.bs) rect(0, yGe, xL, yBase - yGe, 'fill="rgba(2,132,199,.08)"');
+    // building body
+    const yRoof = Y(roof);
+    rect(xL, yRoof, bw, yBase - yRoof, 'fill="#fff" stroke="#334155" stroke-width="2"');
+    // wall thickness hint (flood-facing wall)
+    rect(xL, yRoof, 10, yBase - yRoof, 'fill="#cbd5e1"'); rect(xR-10, yRoof, 10, yBase - yRoof, 'fill="#cbd5e1"');
+    // floors
+    const levels = [];
+    if (p.bs) levels.push(['Basement', p.ELb]);
+    for (let i=0;i<p.n;i++) levels.push([i===0?'1st floor':(i===1?'2nd floor':(i===2?'3rd floor':`${i+1}th floor`)), p.FFE + i*p.hs]);
+    levels.push(['Roof', roof]);
+    for (const [nm, e] of levels){
+      const y = Y(e);
+      line(xL, y, xR, y, 'stroke="#334155" stroke-width="3"');
+      line(xR+8, y, W-8, y, 'stroke="#94a3b8" stroke-width="1" stroke-dasharray="6 4"');
+      T(xR+16, y-5, nm, 'lvl'); T(xR+16, y+13, `${(e/FT).toFixed(1)} ft · ${e.toFixed(2)} m`, 'lvl2');
+    }
+    // storey dimension ticks (right side)
+    const xd = W - 40;
+    for (let i=0;i<levels.length-1;i++){ const y0=Y(levels[i][1]), y1=Y(levels[i+1][1]);
+      line(xd, y0, xd, y1, 'stroke="#64748b" stroke-width="1"'); line(xd-4,y0,xd+4,y0,'stroke="#64748b"'); line(xd-4,y1,xd+4,y1,'stroke="#64748b"');
+      g.push(`<text x="${xd+10}" y="${(y0+y1)/2+4}" class="dim" transform="rotate(-90 ${xd+10} ${(y0+y1)/2+4})" text-anchor="middle">${(levels[i+1][1]-levels[i][1]).toFixed(2)} m</text>`);}
+    // windows (decorative)
+    for (let i=0;i<p.n;i++){ const y0 = Y(p.FFE + i*p.hs + 0.9), h = Math.min(1.5, p.hs-1.3)*s; const nw = Math.max(2, Math.round(bw/70));
+      for (let k=0;k<nw;k++){ const x = xL + 24 + k*(bw-48)/(nw-1) - 9; rect(x, y0-h, 18, h, 'fill="#e2e8f0" stroke="#94a3b8"'); } }
+    // ground line and labels (left side)
+    line(0, yGe, xL, yGe, 'stroke="#78350f" stroke-width="1.5"');
+    line(xR, yGe, W, yGe, 'stroke="#78350f" stroke-width="1.5"');
+    line(0, ySW, xL, ySW, 'stroke="#0284c7" stroke-width="1.5" stroke-dasharray="8 4"');
+    T(8, ySW+14, `SWEL<tspan font-size="8">MRI</tspan> ${(p.SWEL/FT).toFixed(2)} ft`, 'lvl');
+    T(8, yGe-6, `G<tspan font-size="8">e</tspan> ${(p.Ge/FT).toFixed(1)} ft`, 'lvl');
+    // d_f dimension (left)
+    if (p.SWEL > p.Ge){ const xd2 = 34; line(xd2, ySW, xd2, yGe, 'stroke="#0284c7" stroke-width="1"'); line(xd2-4,ySW,xd2+4,ySW,'stroke="#0284c7"'); line(xd2-4,yGe,xd2+4,yGe,'stroke="#0284c7"');
+      g.push(`<text x="${xd2-8}" y="${(ySW+yGe)/2}" class="dim" transform="rotate(-90 ${xd2-8} ${(ySW+yGe)/2})" text-anchor="middle">d<tspan font-size="8">f</tspan> = ${f2(r.d_f)} m</text>`); }
+    // pressure diagrams on the flood-facing wall (Fig. 5B): water triangle SWEL→base, soil differential Ge→base
+    g.push(dim(SEL.sta));
+    if (r.d_h > 0){
+      const k = 90 / Math.max(r.p_base, 1e-6);                     // px per kPa
+      const yB = Y(p.SWEL - r.d_h);
+      poly([[xL, ySW],[xL, yB],[xL - GW*r.d_h*k, yB]], 'fill="rgba(2,132,199,.35)" stroke="#0284c7" stroke-width="1"');
+      if (p.bs && r.h_b > 0){
+        const wW = GW*r.d_h*k, wS = (p.gs-GW)*r.h_b*k, ySoilTop = yGe;
+        // soil wedge stacked outside the water diagram between Ge and base
+        const wAtGe = GW*(p.SWEL-p.Ge)*k;
+        poly([[xL - wAtGe, ySoilTop],[xL - wW, yB],[xL - wW - wS, yB]], 'fill="rgba(161,98,7,.35)" stroke="#a16207" stroke-width="1"');
+        T(xL - wW - wS/2, yB + 40, `soil: (γ<tspan font-size="8">s</tspan>−γ<tspan font-size="8">w</tspan>)·h<tspan font-size="8">b</tspan> = ${f1((p.gs-GW)*r.h_b)} kPa`, 'dim', 'middle');
+      }
+      T(xL - GW*r.d_h*k*0.5, yB + 14, `water: γ<tspan font-size="8">w</tspan>·${p.bs?'z':'d<tspan font-size="8">f</tspan>'} = ${f1(GW*r.d_h)} kPa · total ${f1(r.p_base)} kPa`, 'dim', 'middle');
+      // resultant arrow
+      const yR = Y(p.SWEL - r.d_h + r.z_sta);
+      line(xL - 120, yR, xL - 14, yR, 'stroke="#dc2626" stroke-width="3"'); poly([[xL-14,yR-7],[xL-2,yR],[xL-14,yR+7]], 'fill="#dc2626"');
+      T(xL - 100, yR + 14, `F<tspan font-size="8">sta</tspan> = ${f1(r.F_sta)} kN/m`, 'lvl', 'middle');
+      T(xL - 100, yR + 27, `@ ${f2(r.z_sta)} m above ${p.bs?'basement floor':'grade'}`, 'lvl2', 'middle');
+      // arrows for pressure direction (small)
+      for (let i=1;i<=4;i++){ const e = p.SWEL - r.d_h*i/5, y = Y(e); const w = GW*(p.SWEL-e)*k + (p.bs && e<p.Ge ? (p.gs-GW)*(p.Ge-e)*k : 0);
+        line(xL - w, y, xL - 6, y, 'stroke="#1e3a8a" stroke-width="1"'); poly([[xL-6,y-3],[xL-1,y],[xL-6,y+3]], 'fill="#1e3a8a"'); }
+    }
+    g.push(undim(SEL.sta));
+    // hydrodynamic: uniform pressure SWEL → grade, drawn outside the hydrostatic diagram (own scale)
+    g.push(dim(SEL.dyn));
+    if (h.d > 0 && p.SWEL > p.Ge){
+      const kS = 90 / Math.max(r.p_base, 1e-6), wAtGe = GW*(p.SWEL-p.Ge)*kS;
+      const wD = Math.max(26, Math.min(80, h.p_dyn * 12));
+      const x1 = xL - wAtGe - 18 - wD, x2 = xL - wAtGe - 18, yTop = Y(p.Ge + h.d);
+      rect(x1, yTop, wD, yGe - yTop, 'fill="rgba(8,145,178,.18)" stroke="#0891b2" stroke-width="1" stroke-dasharray="4 3"');
+      for (let i=1;i<=3;i++){ const y = yTop + (yGe - yTop)*i/4; line(x1+4, y, x2-4, y, 'stroke="#0891b2" stroke-width="1"'); poly([[x2-4,y-3],[x2,y],[x2-4,y+3]], 'fill="#0891b2"'); }
+      const yD = Y(p.Ge + h.z_dyn);
+      line(x1 - 60, yD, x2 - 2, yD, 'stroke="#0891b2" stroke-width="3"'); poly([[x2-12,yD-7],[x2,yD],[x2-12,yD+7]], 'fill="#0891b2"');
+      T((x1+x2)/2 - 20, ySW - 22, `F<tspan font-size="8">dyn</tspan> = ${f1(h.F_dyn)} kN (${f2(h.f_dyn)} kN/m)`, 'lvl', 'middle');
+      T((x1+x2)/2 - 20, ySW - 9, `p = ${f2(h.p_dyn)} kPa uniform · @ d<tspan font-size="8">f</tspan>/2 = ${f2(h.z_dyn)} m`, 'lvl2', 'middle');
+    }
+    g.push(undim(SEL.dyn));
+    // debris impact: point load at a = min(d_f, L/2) above the panel base (grade)
+    g.push(dim(SEL.di));
+    if (d.req && d.F_di > 0){
+      const yI = Y(p.Ge + d.a);
+      line(125, yI, xL - 4, yI, 'stroke="#d97706" stroke-width="4" stroke-linecap="round"'); poly([[xL-16,yI-9],[xL-1,yI],[xL-16,yI+9]], 'fill="#d97706"');
+      rect(125, yI - 5, 36, 10, 'fill="#92400e" rx="4"');                        // log icon
+      T(8, ySW - 50, `F<tspan font-size="8">di</tspan> = ${f1(d.F_di)} kN — ${p.deb==='log'?'wood log/pole':p.deb==='veh'?'passenger vehicle':p.deb==='ves'?'small vessel':'custom debris'}`, 'lvl');
+      T(8, ySW - 37, `point load @ a = min(d<tspan font-size="8">f</tspan>, L/2) = ${f2(d.a)} m above grade`, 'lvl2');
+    } else if (!d.req) { T(8, ySW - 37, `debris impact not required (d<tspan font-size="8">f</tspan> ≤ 0.91 m)`, 'lvl2'); }
+    g.push(undim(SEL.di));
+    // buoyancy arrows under the basement slab
+    if (p.bs && r.p_B > 0){ const nb = Math.max(4, Math.round(bw/45));
+      for (let i=0;i<nb;i++){ const x = xL + 20 + i*(bw-40)/(nb-1); line(x, yBase+26, x, yBase+4, 'stroke="#059669" stroke-width="1.5"'); poly([[x-4,yBase+9],[x,yBase+2],[x+4,yBase+9]], 'fill="#059669"'); }
+      T((xL+xR)/2, yBase+40, `buoyancy p<tspan font-size="8">B</tspan> = γ<tspan font-size="8">w</tspan>·z = ${f1(r.p_B)} kPa`, 'dim', 'middle'); }
+    // z dimension (inside, left of wall) for the basement case
+    if (p.bs && r.z > 0){ const xz = xL + 40; line(xz, ySW, xz, yBase, 'stroke="#334155" stroke-width="1" stroke-dasharray="3 3"'); line(xz-4,ySW,xz+4,ySW,'stroke="#334155"'); line(xz-4,yBase,xz+4,yBase,'stroke="#334155"');
+      g.push(`<text x="${xz+12}" y="${(ySW+yBase)/2+4}" class="dim" transform="rotate(-90 ${xz+12} ${(ySW+yBase)/2+4})" text-anchor="middle">z = ${f2(r.z)} m</text>`);
+      const xh = xL + 70; line(xh, yGe, xh, yBase, 'stroke="#a16207" stroke-width="1"'); line(xh-4,yGe,xh+4,yGe,'stroke="#a16207"'); line(xh-4,yBase,xh+4,yBase,'stroke="#a16207"');
+      g.push(`<text x="${xh+12}" y="${(yGe+yBase)/2+4}" class="dim" fill="#a16207" transform="rotate(-90 ${xh+12} ${(yGe+yBase)/2+4})" text-anchor="middle">h<tspan font-size="8">b</tspan> = ${f2(r.h_b)} m</text>`); }
+    // flood water inside the SWEL band across the building? no — water excluded (dry floodproofed). Title
+    T(W/2, 16, p.bs ? 'Case B — basement, water excluded (P-2345 Fig. 5B): water to the basement floor + submerged-soil pressure' : 'Case A — slab on grade: hydrostatic pressure from SWEL to grade (Eq. 5.4-3)', 'lvl', 'middle');
+    T(xL + bw/2, yRoof - 8, `B = ${f1(p.B)} m (flood-facing width) · L<tspan font-size="8">b</tspan> = ${f1(p.L)} m`, 'dim', 'middle');
+    svg.innerHTML = g.join('');
+  }
+
+  // ── results panel ────────────────────────────────────────────────────────
+  function out(p, r, h, d){
+    $('oDf').textContent = `${f2(r.d_f)} m`; $('oDfS').textContent = `${(r.d_f/FT).toFixed(2)} ft · Eq. 5.3-1`;
+    $('kZ').style.display = p.bs ? '' : 'none'; $('kB').style.display = p.bs ? '' : 'none';
+    if (p.bs){ $('oZ').textContent = `${f2(r.z)} m · ${f2(r.h_b)} m`; $('oZS').textContent = `z to basement floor · h_b below grade`;
+      $('oPB').textContent = `${f1(r.p_B)} kPa`; $('oPBS').textContent = `F_B ≈ ${(r.p_B*p.B*p.L/1000).toFixed(1)} MN on ${(p.B*p.L).toFixed(0)} m² plan (Eq. 5.4-2)`; }
+    $('oF').textContent = `${f1(r.F_sta)} kN/m`;
+    $('oFS').textContent = p.bs ? `F_w ${f1(r.F_w)} + F_dif ${f2(r.F_dif)} kN/m` : `½·γw·d_f² (Eq. 5.4-3)`;
+    $('oZs').textContent = `${f2(r.z_sta)} m`; $('oZsS').textContent = `above the ${p.bs?'basement floor':'grade'} · p_base = ${f1(r.p_base)} kPa`;
+    $('oFd').textContent = `${f1(h.F_dyn)} kN`; $('oFdS').textContent = `${f2(h.f_dyn)} kN/m · Cd ${h.Cd.toFixed(2)} · p ${f2(h.p_dyn)} kPa · V ${f2(p.V)} m/s`;
+    $('oCd').textContent = `${h.Cd.toFixed(2)} · ${isFinite(h.rBd)?h.rBd.toFixed(1):'—'} · ${f2(h.z_dyn)} m`;
+    $('oCdS').textContent = p.cdMode==='auto' ? (h.rBd<=12?'B/d_f ≤ 12 → Cd = 1.25 (Table 5.4-2 floor)':h.rBd>=120?'B/d_f ≥ 120 → Cd = 2.0':'linear interpolation, Table 5.4-2') : 'Cd set manually';
+    $('oEqD').innerHTML = `<b>F<sub>dyn</sub> = ½·ρ·C<sub>d</sub>·V²·B·d<sub>f</sub></b> = ½·${h.rho}·${h.Cd.toFixed(2)}·${f2(p.V)}²·${f1(p.B)}·${f2(h.d)} = ${f1(h.F_dyn)} kN (Eq. 5.4-5)${h.d<r.d_f?` — d<sub>f</sub> capped at the structure height ${f2(h.Hs)} m`:''}.<br>Uniform over the submerged height above grade → resultant at d<sub>f</sub>/2; acts on the LFRS (enclosed building). Below-grade walls see no drag.`;
+    $('oFi').textContent = d.req ? `${f1(d.F_di)} kN` : 'n/a';
+    $('oFiS').textContent = d.req ? `@ ${f2(d.a)} m · ${p.deb==='log'?'wood log':p.deb==='veh'?'vehicle':p.deb==='ves'?'vessel':'custom'} · k_e ${Math.round(d.k_e).toLocaleString('en-US')} kN/m` : 'not required: d_f ≤ 0.91 m (§5.3.9)';
+    $('oKe').textContent = `${Math.round(d.k_panel).toLocaleString('en-US')} · ${Math.round(d.k_e).toLocaleString('en-US')} kN/m · ${d.m.toFixed(0)} kg`;
+    $('oKeS').textContent = p.keMode==='series' ? `series stiffness: ${(100*d.red).toFixed(0)} % below k_deb = ${p.kd.toLocaleString('en-US')} kN/m (URM flexibility effect)` : `rigid element: k_e = k_deb = ${p.kd.toLocaleString('en-US')} kN/m`;
+    $('oEqI').innerHTML = `<b>F<sub>di</sub> = C<sub>o</sub>·V·C<sub>R</sub>·C<sub>s</sub>·√(k<sub>e</sub>·m<sub>deb</sub>)</b> = ${p.Co.toFixed(2)}·${f2(p.V)}·${d.CR.toFixed(2)}·${d.Cs.toFixed(2)}·√(${Math.round(d.k_e).toLocaleString('en-US')} kN/m · ${d.m.toFixed(0)} kg) = ${f1(d.F_di)} kN (Eq. 5.4-20)<br><b>k<sub>panel</sub> = K·E<sub>m</sub>·I/L³</b> = ${p.Kbc}·${p.Em.toFixed(1)} GPa·(${p.be.toFixed(2)}·${p.tw.toFixed(2)}³/12)/${p.Lp.toFixed(2)}³ = ${Math.round(d.k_panel).toLocaleString('en-US')} kN/m; m<sub>deb</sub> = W/g.<br>C<sub>R</sub>: 1.0 for d<sub>f</sub> ≥ 1.52 m, 0 below 0.30 m, linear between. Riverine: upstream face ±22.5° only; one strike per panel, at the most severe flexure/shear position within the wetted height (§5.4.5.2).`;
+    $('oEq').innerHTML = p.bs
+      ? `<b>F<sub>w</sub> = ½·γ<sub>w</sub>·z²</b> = ½·${GW.toFixed(2)}·${f2(r.z)}² = ${f1(r.F_w)} kN/m (at z/3)<br><b>F<sub>dif</sub> = ½·(γ<sub>s</sub> − γ<sub>w</sub>)·h<sub>b</sub>²</b> = ½·(${p.gs.toFixed(2)} − ${GW.toFixed(2)})·${f2(r.h_b)}² = ${f2(r.F_dif)} kN/m (at h<sub>b</sub>/3)<br><b>F<sub>sta</sub> = F<sub>w</sub> + F<sub>dif</sub></b>; z<sub>sta</sub> = (F<sub>w</sub>·z/3 + F<sub>dif</sub>·h<sub>b</sub>/3)/F<sub>sta</sub><br>Below-grade soils assumed fully saturated (§5.4.2); γ<sub>s</sub> from Table 3.2-1.`
+      : `<b>F<sub>sta</sub> = ½·γ<sub>w</sub>·d<sub>f</sub>²</b> = ½·${GW.toFixed(2)}·${f2(r.d_f)}² = ${f1(r.F_sta)} kN/m, resultant at d<sub>f</sub>/3 = ${f2(r.z_sta)} m above grade (Eq. 5.4-3).<br>No below-grade surfaces → no submerged-soil term; buoyancy on an isolated slab-on-grade not carried to the building.`;
+  }
+
+  // ── Fa builder: combine the selected loads at the moment level (simply supported strip, span L, width b_eff)
+  function combine(p, r, h, d){
+    const L = p.Lp, Mof = (F, y) => { y = Math.max(0, Math.min(L, y)); return F * y * (L - y) / L; };
+    const rows = [
+      {k:'sta', name:'Hydrostatic F<sub>sta</sub>', sym:'F<sub>sta</sub>', c:'#dc2626', F: r.F_sta,            y: r.z_sta, note: p.bs ? 'y from basement floor' : 'y from grade'},
+      {k:'dyn', name:'Hydrodynamic F<sub>dyn</sub>/B', sym:'F<sub>dyn</sub>/B', c:'#0891b2', F: h.f_dyn,          y: h.z_dyn, note: 'y from grade'},
+      {k:'di',  name:'Debris F<sub>di</sub>/b<sub>eff</sub>', sym:'F<sub>di</sub>/b<sub>eff</sub>', c:'#d97706', F: d.req ? d.F_di / p.be : 0, y: d.a, note: 'y from grade'},
+    ];
+    rows.forEach(o => { o.M = Mof(o.F, o.y); o.on = SEL[o.k]; });
+    const on = rows.filter(o => o.on);
+    const F = on.reduce((a,o)=>a+o.F,0), M = on.reduce((a,o)=>a+o.M,0);
+    const ft = +$('fFt').value, Mcap = ft * p.tw * p.tw / 6;
+    return {rows, on, F, M, Mcap, ft, DCR: Mcap > 0 ? M / Mcap : 0};
+  }
+  function caseName(){ const k = (SEL.sta?'1':'0')+(SEL.dyn?'1':'0')+(SEL.di?'1':'0');
+    return {'100':'Hydrostatic only','010':'Hydrodynamic only','001':'Debris only','110':'LC1 · sustained','111':'LC2 · impact','101':'sta + di','011':'dyn + di','000':'no load selected'}[k]; }
+  function outFa(p, c){
+    const k = (SEL.sta?'1':'0')+(SEL.dyn?'1':'0')+(SEL.di?'1':'0');
+    document.querySelectorAll('.preset').forEach(b => b.classList.toggle('on', b.dataset.set === k));
+    for (const o of c.rows){ const t = $('t' + o.k[0].toUpperCase() + o.k.slice(1)); t.classList.toggle('on', o.on); t.classList.toggle('off', !o.on); }
+    $('tvSta').textContent = f1(c.rows[0].F); $('tvDyn').textContent = f2(c.rows[1].F); $('tvDi').textContent = f1(c.rows[2].F);
+    $('faEq').innerHTML = c.on.length
+      ? `F<sub>a</sub> = ` + c.on.map(o => `<span class="t" style="--c:${o.c}">${o.sym}</span>`).join(' + ') + ` &nbsp;=&nbsp; ` + c.on.map(o => f1(o.F)).join(' + ') + ` = <b>${f1(c.F)} kN/m</b><br><span class="mut">M<sub>Fa</sub> = ` + c.on.map(o => `M<sub>${o.k==='di'?'imp':o.k}</sub>`).join(' + ') + ` = ` + c.on.map(o => f2(o.M)).join(' + ') + ` = <b>${f2(c.M)} kN·m/m</b> — governing component: <b>${c.on.reduce((a,o)=>o.M>a.M?o:a).name}</b></span>`
+      : `<span class="mut">Select at least one load.</span>`;
+    const Mt = Math.max(c.M, 1e-9);
+    $('mBar').innerHTML = c.on.map(o => `<div style="width:${(100*o.M/Mt).toFixed(1)}%;background:${o.c}" title="${o.name}">${100*o.M/Mt >= 12 ? (100*o.M/Mt).toFixed(0)+'%' : ''}</div>`).join('');
+    $('mBody').innerHTML = c.rows.map(o => `<tr class="${o.on?'':'off'}"><td><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${o.c};margin-right:6px"></i>${o.name}<span style="color:var(--dim)"> · ${o.note}</span></td><td>${f1(o.F)}</td><td>${f2(o.y)}</td><td>${f2(o.M)}</td><td>${o.on&&c.M>0?(100*o.M/c.M).toFixed(1)+' %':'—'}</td></tr>`).join('')
+      + `<tr class="tot"><td>F<sub>a</sub> — ${caseName()}</td><td>${f1(c.F)}</td><td></td><td>${f2(c.M)}</td><td>100 %</td></tr>`;
+    $('faName').innerHTML = `F<sub>a</sub> — ${caseName()}`; $('faF').innerHTML = `${f1(c.F)}<small>kN/m</small>`;
+    $('faM').textContent = `${f2(c.M)} kN·m/m`; $('faMc').textContent = `${f2(c.Mcap)} kN·m/m`; $('vFt').textContent = `${c.ft} kPa · t_w ${p.tw.toFixed(2)} m`;
+    const pill = $('faDCR'); pill.textContent = `DCR ${c.DCR.toFixed(2)}`;
+    pill.style.background = c.DCR <= 1 ? 'rgba(5,150,105,.25)' : c.DCR <= 3 ? 'rgba(217,119,6,.3)' : 'rgba(220,38,38,.35)';
+    pill.style.color = c.DCR <= 1 ? '#6ee7b7' : c.DCR <= 3 ? '#fcd34d' : '#fca5a5';
+  }
+  document.querySelectorAll('.tile').forEach(t => t.addEventListener('click', () => { SEL[t.dataset.k] = !SEL[t.dataset.k]; update(); }));
+  document.querySelectorAll('.preset').forEach(b => b.addEventListener('click', () => { const v = b.dataset.set; SEL.sta = v[0]==='1'; SEL.dyn = v[1]==='1'; SEL.di = v[2]==='1'; update(); }));
+
+
+  // ── building vertical load and FEM export ──────────────────────────────────────────────────
+  // floorLine: floor/roof reactions on the wall (kN per metre) from DL/LL × half the span; σv(e): vertical stress at elevation e (kPa)
+  function floorLine(p){ const ws = SLAB[p.slabMat].rho * 9.81 / 1000 * p.ts * p.trib / 2;   // slab self-weight reaction, kN/m
+    const w = ws + (p.DL + p.LL) * p.trib / 2, r = ws + p.RL * p.trib / 2; const out = [];
+    if (p.bs || p.FFE > p.Ge + 0.05) out.push({name:'1st floor', e: p.FFE, w});
+    for (let i = 1; i < p.n; i++) out.push({name: (i+1)+(i===1?'nd':i===2?'rd':'th')+' floor', e: p.FFE + i*p.hs, w});
+    out.push({name:'roof slab', e: p.FFE + p.n*p.hs, w: r, slab: true}); return out; }
+  function sigmaV(p, e){ const roof = p.FFE + p.n*p.hs; let F = p.gm * p.tw * Math.max(roof - e, 0);
+    for (const f of floorLine(p)) if (f.e > e) F += f.w; return F / p.tw; }
+  const SLAB = { concrete: {E: 25e9, rho: 2400, nu: 0.2, name:'reinforced concrete slab'}, timber: {E: 10e9, rho: 600, nu: 0.3, name:'timber diaphragm (equivalent plate)'} };
+  const g4 = v => +(+v).toFixed(4);
+
+  function femModel(){
+    const {p, r, h, d, c} = last; const base = p.bs ? p.ELb : p.Ge, roof = p.FFE + p.n*p.hs;
+    const rel = e => g4(e - base), H = rel(roof), slab = SLAB[p.slabMat];
+    const floors = floorLine(p).filter(f => !f.slab && rel(f.e) > 0.05).map(f => ({name: f.name, e: f.e, y: rel(f.e), w_kN_m: f.w}));
+    const slabs = [...floors.map(f => ({name: f.name + ' slab', y_top: f.y, q_kPa: p.DL + p.LL, load: (p.DL + p.LL) > 0 ? 'superimposed DL ' + p.DL + ' + LL ' + p.LL + ' kPa' : 'self-weight only (gravity)'})),
+                   {name: 'roof slab', y_top: g4(H + p.ts), q_kPa: p.RL, load: p.RL > 0 ? 'roof superimposed DL / snow ' + p.RL + ' kPa' : 'self-weight only (gravity)'}];
+    return {
+      meta: {source:'Flood Loads — Building Cross-Section card', standard:'ASCE/SEI 7-22 Supplement 2', generated: new Date().toISOString(), fa_case: caseName(),
+             units:'SI in the scripts (N, m, Pa, kg); this file in kN, m, kPa unless noted'},
+      site: {SWEL_MRI_m: p.SWEL, SWEL_MRI_ft: p.SWEL/FT, Ge_m: p.Ge, basement: p.bs, EL_basement_m: p.bs ? p.ELb : null, d_f_m: r.d_f, z_m: r.z, h_b_m: r.h_b, gamma_w_kN_m3: GW, gamma_s_kN_m3: p.gs, V_m_s: p.V},
+      building: {B_m: p.B, L_b_m: p.L, storeys: p.n, storey_height_m: p.hs, FFE_m: p.FFE, roof_m: roof, t_w_m: p.tw, gamma_masonry_kN_m3: p.gm,
+                 levels_m: [...(p.bs?[{name:'basement', e:p.ELb}]:[]), ...Array.from({length:p.n},(_,i)=>({name:(i+1)+(i===0?'st':i===1?'nd':i===2?'rd':'th')+' floor', e:p.FFE+i*p.hs})), {name:'roof', e:roof}]},
+      frame_model: {description:'flood-facing wall + rear wall + a slab at every floor and at the roof; vertical load = self-weight (gravity) plus any superimposed pressure set in the card (0 for the flood-moment analysis); x = width 0..B, y = up (0 = ' + (p.bs?'basement floor':'grade') + '), z = 0 exterior flood face → interior',
+                    origin_elevation_m: base, wall_height_m: H, y_grade: rel(p.Ge), y_SWEL: rel(p.SWEL), y_FFE: rel(p.FFE),
+                    span_between_walls_m: p.trib, slab: {thickness_m: p.ts, material: slab.name, E_Pa: slab.E, nu: slab.nu, rho_kg_m3: slab.rho},
+                    slabs: slabs, floor_reactions_kN_m: floors, side_walls_restrain_slab_edges: true, base_support: 'encastre at y = 0 (both walls)'},
+      material_placeholders: {E_MPa: p.Em*1000, nu: 0.15, f_t_kPa: +$('fFt').value, f_m_MPa: 5.0, cohesion_kPa: 200, friction: 0.7, G_f_N_m: 10, rho_kg_m3: p.gm*1000/9.81,
+                   note:'PILOT PLACEHOLDERS — confirm with the advisor (URM_Capacity_Inputs). E from the card; f_m, c, μ, G_f typical lime-mortar URM values.'},
+      vertical_loads: {floor_DL_kPa: p.DL, floor_LL_kPa: p.LL, roof_DL_kPa: p.RL, span_m: p.trib, sigma_v_at_grade_kPa: sigmaV(p, p.Ge), sigma_v_at_base_kPa: sigmaV(p, base)},
+      flood_loads: {selected: {...SEL}, F_a_kN_m: c.F,
+        hydrostatic: {applies: SEL.sta, water:'p(y) = γw·(y_SWEL − y), exterior face, y ≤ y_SWEL', soil: p.bs ? 'p_s(y) = (γs − γw)·(y_grade − y), exterior face, y ≤ y_grade' : null,
+                      F_sta_kN_m: r.F_sta, F_w_kN_m: r.F_w, F_dif_kN_m: r.F_dif, z_sta_m: r.z_sta, p_base_kPa: r.p_base, p_buoyancy_kPa: r.p_B},
+        hydrodynamic: {applies: SEL.dyn, p_dyn_kPa: h.p_dyn, over:'exterior face between y_grade and y_SWEL', F_dyn_kN: h.F_dyn, Cd: h.Cd, V_m_s: p.V, rho: h.rho},
+        debris: {applies: SEL.di && d.req, F_di_kN: d.req ? d.F_di : 0, at_y: rel(p.Ge + d.a), at_x: p.B/2, type: p.deb, k_e_kN_m: d.k_e, note:'point load, one strike; Eq. 5.4-20'}},
+      strategy_notes: 'S2 wet floodproofing: apply the same water pressure on the interior face (equalised), keep the soil term. S1 self-supporting barrier: remove exterior flood loads on the wall, keep leakage head only. S0 sealant: as exported (wall carries everything).'
+    };
+  }
+
+  function abaqusScript(M){
+    const w = M.frame_model, b = M.building, m = M.material_placeholders, fl = M.flood_loads, s = M.site;
+    const gw = s.gamma_w_kN_m3*1000, gs = s.gamma_s_kN_m3*1000, B = b.B_m, H = w.wall_height_m, T = b.t_w_m, S = w.span_between_walls_m, TS = w.slab.thickness_m;
+    const inter = w.slabs.filter(x => x.name !== 'roof slab'), roof = w.slabs.find(x => x.name === 'roof slab');
+    const ys = new Set([w.y_grade, w.y_SWEL]); if (fl.debris.applies) ys.add(fl.debris.at_y);
+    const cuts = [...ys].filter(y => y > 1e-4 && y < H - 1e-4).sort((x,y)=>x-y);
+    const L = [];
+    L.push('# -*- coding: utf-8 -*-',
+      `# Abaqus/CAE script generated by the Flood Loads card (${M.meta.generated}) — Fa case: ${M.meta.fa_case}`,
+      `# Frame: flood-facing wall (z = 0..T) + rear wall (z = S+T..S+2T) + a slab at every floor (z = T..S+T, under the floor level) + roof slab (y = H..H+TS, z = 0..S+2T)`,
+      `# x = width (0..B), y = up (0 = ${s.basement?'basement floor':'grade'}), z = out-of-plane, exterior flood face at z = 0.  Units: N, m, Pa, kg.`,
+      '# Run: Abaqus/CAE > File > Run Script, or: abaqus cae noGUI=this_script.py',
+      'from abaqus import *', 'from abaqusConstants import *', 'import regionToolset', '',
+      'NONLINEAR = False    # False: linear elastic (understand the physics first); True: Concrete Damaged Plasticity with placeholder parameters',
+      'SIDE_WALLS = True    # True: the side walls (not modelled) restrain the slab edges at x = 0 and x = B out of plane (U3 = 0)', '',
+      `B, H, T, S, TS = ${B}, ${H}, ${T}, ${S}, ${TS}`,
+      `E, NU, RHO = ${m.E_MPa*1e6}, ${m.nu}, ${g4(m.rho_kg_m3)}          # URM (placeholders)`,
+      `FT, FM, GF = ${m.f_t_kPa*1000}, ${m.f_m_MPa*1e6}, ${m.G_f_N_m}      # Pa, Pa, N/m`,
+      `ES, NUS, RHOS = ${w.slab.E_Pa}, ${w.slab.nu}, ${w.slab.rho_kg_m3}        # ${w.slab.material}`,
+      `Y_GRADE, Y_SWEL = ${w.y_grade}, ${w.y_SWEL}`, `GW, GS = ${gw}, ${gs}   # N/m3: water, submerged-soil equivalent`,
+      `FLOORS = [${inter.map(x => `(${x.y_top}, ${x.q_kPa*1000})`).join(', ')}]   # (y_top of slab, superimposed pressure in Pa; 0 = self-weight only)`,
+      `Q_ROOF = ${roof.q_kPa*1000}   # Pa on the roof slab (${roof.load})`, '',
+      "mdl = mdb.models['Model-1']",
+      'def box(name, x0, y0, z0, x1, y1, z1):',
+      "    sk = mdl.ConstrainedSketch(name=name, sheetSize=200.0); sk.rectangle(point1=(x0, y0), point2=(x1, y1))",
+      '    prt = mdl.Part(name=name, dimensionality=THREE_D, type=DEFORMABLE_BODY); prt.BaseSolidExtrude(sketch=sk, depth=z1 - z0)',
+      '    return prt',
+      "wf = box('WallFront', 0.0, 0.0, 0.0, B, H, T)", "wr = box('WallRear', 0.0, 0.0, 0.0, B, H, T)",
+      "roofslab = box('RoofSlab', 0.0, 0.0, 0.0, B, TS, S + 2*T)", "floorslab = box('FloorSlab', 0.0, 0.0, 0.0, B, TS, S)   # clear span between the wall interior faces", '',
+      '# materials & sections', "mat = mdl.Material(name='URM')", 'mat.Density(table=((RHO,),))', 'mat.Elastic(table=((E, NU),))',
+      'if NONLINEAR:', '    mat.ConcreteDamagedPlasticity(table=((10.0, 0.1, 1.16, 0.667, 0.0005),))',
+      '    mat.concreteDamagedPlasticity.ConcreteCompressionHardening(table=((0.4*FM, 0.0), (FM, 0.002), (0.2*FM, 0.006)))',
+      '    mat.concreteDamagedPlasticity.ConcreteTensionStiffening(table=((FT, 0.0), (0.05*FT, 2.0*GF/FT)), type=DISPLACEMENT)',
+      "ms = mdl.Material(name='SlabMat'); ms.Density(table=((RHOS,),)); ms.Elastic(table=((ES, NUS),))",
+      "mdl.HomogeneousSolidSection(name='URM-sec', material='URM', thickness=None)", "mdl.HomogeneousSolidSection(name='Slab-sec', material='SlabMat', thickness=None)",
+      "for prt in (wf, wr): prt.SectionAssignment(region=regionToolset.Region(cells=prt.cells), sectionName='URM-sec')",
+      "for prt in (roofslab, floorslab): prt.SectionAssignment(region=regionToolset.Region(cells=prt.cells), sectionName='Slab-sec')", '',
+      '# assembly: walls, one slab per floor (top face at the floor level), roof slab on top; merged into one part (shared faces → continuous mesh)',
+      'asm = mdl.rootAssembly', 'insts = []',
+      "insts.append(asm.Instance(name='WallFront-1', part=wf, dependent=OFF))",
+      "i2 = asm.Instance(name='WallRear-1', part=wr, dependent=OFF); asm.translate(instanceList=('WallRear-1',), vector=(0.0, 0.0, S + T)); insts.append(i2)",
+      'for k, (ytop, q) in enumerate(FLOORS):',
+      "    nm = 'FloorSlab-%d' % (k + 1); ii = asm.Instance(name=nm, part=floorslab, dependent=OFF)",
+      "    asm.translate(instanceList=(nm,), vector=(0.0, ytop - TS, T)); insts.append(ii)",
+      "i3 = asm.Instance(name='RoofSlab-1', part=roofslab, dependent=OFF); asm.translate(instanceList=('RoofSlab-1',), vector=(0.0, H, 0.0)); insts.append(i3)",
+      "asm.InstanceFromBooleanMerge(name='Frame', instances=tuple(insts), keepIntersections=ON, originalInstances=SUPPRESS, domain=GEOMETRY)",
+      "prt = mdl.parts['Frame']; inst = asm.instances['Frame-1']", '',
+      '# partitions: grade, SWEL, debris height (walls); mid-width plane for the debris point',
+      `for y in [${cuts.join(', ')}]:`,
+      '    dp = prt.DatumPlaneByPrincipalPlane(principalPlane=XZPLANE, offset=y); prt.PartitionCellByDatumPlane(datumPlane=prt.datums[dp.id], cells=prt.cells)',
+      'dp = prt.DatumPlaneByPrincipalPlane(principalPlane=YZPLANE, offset=B/2.0); prt.PartitionCellByDatumPlane(datumPlane=prt.datums[dp.id], cells=prt.cells)',
+      'asm.regenerate()', '',
+      'def faces(x0, y0, z0, x1, y1, z1): return inst.faces.getByBoundingBox(x0-1e-4, y0-1e-4, z0-1e-4, x1+1e-4, y1+1e-4, z1+1e-4)',
+      'def edges(x0, y0, z0, x1, y1, z1): return inst.edges.getByBoundingBox(x0-1e-4, y0-1e-4, z0-1e-4, x1+1e-4, y1+1e-4, z1+1e-4)', '',
+      "mdl.StaticStep(name='Gravity', previous='Initial', nlgeom=OFF)",
+      "mdl.StaticStep(name='Flood', previous='Gravity', nlgeom=ON if NONLINEAR else OFF, initialInc=0.05, minInc=1e-6, maxNumInc=400)", '',
+      '# supports: both walls encastred at the base; optionally the slab edges at x = 0 / x = B restrained out of plane by the side walls',
+      "mdl.EncastreBC(name='Base', createStepName='Initial', region=regionToolset.Region(faces=faces(0, 0, 0, B, 0, S + 2*T)))",
+      'if SIDE_WALLS:',
+      '    for k, (ytop, q) in enumerate(FLOORS):',
+      "        mdl.DisplacementBC(name='SideWalls-F%d' % (k + 1), createStepName='Initial', region=regionToolset.Region(faces=faces(0, ytop - TS, T, 0, ytop, S + T) + faces(B, ytop - TS, T, B, ytop, S + T)), u3=0.0)",
+      "    mdl.DisplacementBC(name='SideWalls-Roof', createStepName='Initial', region=regionToolset.Region(faces=faces(0, H, 0, 0, H + TS, S + 2*T) + faces(B, H, 0, B, H + TS, S + 2*T)), u3=0.0)", '',
+      '# vertical loads: gravity on walls + slabs (self-weight); superimposed pressures only if set in the card (0 = flood-moment analysis, self-weight only)',
+      "mdl.Gravity(name='g', createStepName='Gravity', comp2=-9.81)",
+      'for k, (ytop, q) in enumerate(FLOORS):',
+      "    if q > 0: mdl.Pressure(name='FloorLoad-%d' % (k + 1), createStepName='Gravity', region=regionToolset.Region(side1Faces=faces(0, ytop, T, B, ytop, S + T)), magnitude=q)",
+      "if Q_ROOF > 0: mdl.Pressure(name='RoofLoad', createStepName='Gravity', region=regionToolset.Region(side1Faces=faces(0, H + TS, 0, B, H + TS, S + 2*T)), magnitude=Q_ROOF)", '',
+      `# flood loads on the exterior face (z = 0) of the front wall — Fa case: ${M.meta.fa_case}`);
+    if (fl.hydrostatic.applies){
+      L.push("mdl.ExpressionField(name='p_water', localCsys=None, description='hydrostatic', expression='%g*(%g - Y)' % (GW, Y_SWEL))",
+        "mdl.Pressure(name='Hydrostatic', createStepName='Flood', region=regionToolset.Region(side1Faces=faces(0, 0, 0, B, Y_SWEL, 0)), distributionType=FIELD, field='p_water', magnitude=1.0)");
+      if (s.basement) L.push("mdl.ExpressionField(name='p_soil', localCsys=None, description='submerged-soil differential', expression='%g*(%g - Y)' % (GS - GW, Y_GRADE))",
+        "mdl.Pressure(name='Soil', createStepName='Flood', region=regionToolset.Region(side1Faces=faces(0, 0, 0, B, Y_GRADE, 0)), distributionType=FIELD, field='p_soil', magnitude=1.0)");
+    }
+    if (fl.hydrodynamic.applies) L.push(`mdl.Pressure(name='Hydrodynamic', createStepName='Flood', region=regionToolset.Region(side1Faces=faces(0, Y_GRADE, 0, B, Y_SWEL, 0)), magnitude=${g4(fl.hydrodynamic.p_dyn_kPa*1000)})   # uniform, Eq. 5.4-5 / B`);
+    if (fl.debris.applies) L.push(`v = inst.vertices.getByBoundingBox(B/2.0-1e-4, ${fl.debris.at_y}-1e-4, -1e-4, B/2.0+1e-4, ${fl.debris.at_y}+1e-4, 1e-4)`,
+        `mdl.ConcentratedForce(name='Debris', createStepName='Flood', region=regionToolset.Region(vertices=v), cf3=${g4(fl.debris.F_di_kN*1000)})   # Eq. 5.4-20, one strike`);
+    L.push('', '# mesh and job', 'asm.seedPartInstance(regions=(inst,), size=0.10, deviationFactor=0.1, minSizeFactor=0.1)', 'asm.generateMesh(regions=(inst,))',
+      "mdb.Job(name='FloodFrame', model='Model-1', description='Flood-facing URM wall + floor/roof slabs + rear wall — ASCE 7-22 S2 loads from the dashboard')",
+      "# mdb.jobs['FloodFrame'].submit(); mdb.jobs['FloodFrame'].waitForCompletion()", '',
+      '# Read: U3 at mid-height of the front wall panels (deflection); S22 on the interior face at grade and at the slab levels (flexural tension),',
+      '# S23 on the base face (sliding-shear demand); slab reactions into the walls (σ_v); with NONLINEAR: DAMAGET / PEEQT (cracking), DAMAGEC (crushing).');
+    return L.join('\n');
+  }
+
+  function dianaScript(M){
+    const w = M.frame_model, b = M.building, m = M.material_placeholders, fl = M.flood_loads, s = M.site;
+    const B = b.B_m, H = w.wall_height_m, T = b.t_w_m, S = w.span_between_walls_m, TS = w.slab.thickness_m, gw = s.gamma_w_kN_m3*1000, gs = s.gamma_s_kN_m3*1000;
+    const inter = w.slabs.filter(x => x.name !== 'roof slab'), roof = w.slabs.find(x => x.name === 'roof slab');
+    const bands = [], dz = 0.25;
+    for (let y0 = 0; y0 < w.y_SWEL - 1e-6; y0 += dz){ const y1 = Math.min(y0 + dz, w.y_SWEL), ym = (y0+y1)/2; let pr = 0;
+      if (fl.hydrostatic.applies){ pr += gw*(w.y_SWEL - ym); if (s.basement && ym < w.y_grade) pr += (gs-gw)*(w.y_grade - ym); }
+      if (fl.hydrodynamic.applies && ym > w.y_grade) pr += fl.hydrodynamic.p_dyn_kPa*1000; bands.push([g4(y0), g4(y1), +pr.toFixed(1)]); }
+    const cuts = new Set(bands.map(x=>x[1])); cuts.add(H); inter.forEach(f=>cuts.add(f.y_top));
+    const ys = [0, ...[...cuts].filter(y=>y>1e-4).sort((x,y)=>x-y)];
+    const bandOf = y => Math.max(ys.findIndex(v => v > y + 1e-6) - 1, 0);
+    const L = [];
+    L.push(`# DIANA FEA Python script generated by the Flood Loads card (${M.meta.generated}) — Fa case: ${M.meta.fa_case}`,
+      '# TEMPLATE: command names follow the DIANA 10.x Python API (diana module); verify each call against the API reference of your version.',
+      '# Front wall as curved-shell sheets stacked in horizontal bands (uniform pressure per band) + rear wall sheet + one slab sheet per floor + roof slab sheet.',
+      `# x = width 0..B, y = up (0 = ${s.basement?'basement floor':'grade'}), z = out-of-plane (0 = exterior flood face; rear wall at z = S + T).  Units: N, m, Pa.`,
+      'from diana import *', '', "newProject('FloodFrame', 100)", "setModelAnalysisAspects(['STRUCT'])", "setModelDimension('3D')", "setDefaultMeshOrder('QUADRATIC')", "setDefaultMesherType('HEXQUAD')", '',
+      `B, H, T, S, TS = ${B}, ${H}, ${T}, ${S}, ${TS}`, `YS = [${ys.join(', ')}]   # band boundaries (m)`, `FLOORS = [${inter.map(x => x.y_top).join(', ')}]   # slab levels (m)`, '',
+      '# materials — Engineering Masonry Model placeholders for URM; linear elastic slabs',
+      "addMaterial('URM', 'MCSTEL', 'EMM', [])", `setParameter('MATERIAL', 'URM', 'LINEAR/ELASTI/YOUNG', ${m.E_MPa*1e6})`, `setParameter('MATERIAL', 'URM', 'LINEAR/ELASTI/POISON', ${m.nu})`, `setParameter('MATERIAL', 'URM', 'LINEAR/MASS/DENSIT', ${g4(m.rho_kg_m3)})`,
+      `# EMM nonlinear block to fill per the parameter list of your version: f_t = ${m.f_t_kPa*1000} Pa, f_m = ${m.f_m_MPa*1e6} Pa, G_f = ${m.G_f_N_m} N/m, c = ${m.cohesion_kPa*1000} Pa, mu = ${m.friction}`,
+      "addMaterial('SlabMat', 'MCSTEL', 'ISOTRO', [])", `setParameter('MATERIAL', 'SlabMat', 'LINEAR/ELASTI/YOUNG', ${w.slab.E_Pa})`, `setParameter('MATERIAL', 'SlabMat', 'LINEAR/ELASTI/POISON', ${w.slab.nu})`, `setParameter('MATERIAL', 'SlabMat', 'LINEAR/MASS/DENSIT', ${w.slab.rho_kg_m3})`,
+      "addGeometry('WallGeo', 'SHEET', 'CURSHE', [])", "setParameter('GEOMET', 'WallGeo', 'THICK', T)", "addGeometry('SlabGeo', 'SHEET', 'CURSHE', [])", "setParameter('GEOMET', 'SlabGeo', 'THICK', TS)", '',
+      '# sheets: front wall bands (z = 0), rear wall (z = S + T), floor slabs (y = level, z = T..S + T), roof slab (y = H)', 'front = []', 'for i in range(len(YS) - 1):',
+      "    nm = 'Band%02d' % i", "    createSheet(nm, [[0.0, YS[i], 0.0], [B, YS[i], 0.0], [B, YS[i+1], 0.0], [0.0, YS[i+1], 0.0]])", '    front.append(nm)',
+      "createSheet('Rear', [[0.0, 0.0, S + T], [B, 0.0, S + T], [B, H, S + T], [0.0, H, S + T]])",
+      'slabs = []', 'for k, y in enumerate(FLOORS):', "    nm = 'Slab%d' % (k + 1)", "    createSheet(nm, [[0.0, y, T], [B, y, T], [B, y, S + T], [0.0, y, S + T]])", '    slabs.append(nm)',
+      "createSheet('Roof', [[0.0, H, 0.0], [B, H, 0.0], [B, H, S + 2*T], [0.0, H, S + 2*T]])",
+      "setElementClassType('SHAPE', front + ['Rear', 'Roof'] + slabs, 'CURSHE')", "assignMaterial('URM', 'SHAPE', front + ['Rear'])", "assignGeometry('WallGeo', 'SHAPE', front + ['Rear'])",
+      "assignMaterial('SlabMat', 'SHAPE', slabs + ['Roof'])", "assignGeometry('SlabGeo', 'SHAPE', slabs + ['Roof'])", '',
+      '# supports: both walls fixed at the base; slab edges at x = 0 / x = B restrained out of plane by the side walls (not modelled)',
+      "createLineSupport('Base', 'Supports')", "setParameter('GEOMETRYSUPPORT', 'Base', 'AXES', [1, 2, 3])", "setParameter('GEOMETRYSUPPORT', 'Base', 'TRANSL', [1, 1, 1])", "setParameter('GEOMETRYSUPPORT', 'Base', 'ROTATI', [1, 1, 1])",
+      "attach('GEOMETRYSUPPORT', 'Base', 'Band00', [[B/2.0, 0.0, 0.0]])", "attach('GEOMETRYSUPPORT', 'Base', 'Rear', [[B/2.0, 0.0, S + T]])",
+      "createLineSupport('SideWalls', 'Supports')", "setParameter('GEOMETRYSUPPORT', 'SideWalls', 'AXES', [1, 2, 3])", "setParameter('GEOMETRYSUPPORT', 'SideWalls', 'TRANSL', [0, 0, 1])",
+      'for k, y in enumerate(FLOORS):', "    attach('GEOMETRYSUPPORT', 'SideWalls', slabs[k], [[0.0, y, (S + 2*T)/2.0], [B, y, (S + 2*T)/2.0]])",
+      "attach('GEOMETRYSUPPORT', 'SideWalls', 'Roof', [[0.0, H, (S + 2*T)/2.0], [B, H, (S + 2*T)/2.0]])", '',
+      '# load cases', "addSet('GEOMETRYLOADSET', 'Gravity')", "createModelLoad('Dead', 'Gravity')", "setParameter('GEOMETRYLOAD', 'Dead', 'LODTYP', 'WEIGHT')", "setParameter('GEOMETRYLOAD', 'Dead', 'WEIGHT/GRAVAC', -9.81)", "setParameter('GEOMETRYLOAD', 'Dead', 'WEIGHT/DIRECT', 2)",
+      `Q_FLOOR, Q_ROOF = ${(inter[0] ? inter[0].q_kPa : 0)*1000}, ${roof.q_kPa*1000}   # superimposed pressures (Pa); 0 = self-weight only`,
+      'for k, y in enumerate(FLOORS):', "    if Q_FLOOR <= 0: break", "    nm = 'FloorLoad%d' % (k + 1)", "    createSurfaceLoad(nm, 'Gravity')", "    setParameter('GEOMETRYLOAD', nm, 'LODTYP', 'FORCE')", "    setParameter('GEOMETRYLOAD', nm, 'FORCE/VALUE', -Q_FLOOR)", "    setParameter('GEOMETRYLOAD', nm, 'FORCE/DIRECT', 2)", "    attach('GEOMETRYLOAD', nm, slabs[k], [])",
+      "if Q_ROOF > 0:", "    createSurfaceLoad('RoofLoad', 'Gravity')", "    setParameter('GEOMETRYLOAD', 'RoofLoad', 'LODTYP', 'FORCE')", "    setParameter('GEOMETRYLOAD', 'RoofLoad', 'FORCE/VALUE', -Q_ROOF)", "    setParameter('GEOMETRYLOAD', 'RoofLoad', 'FORCE/DIRECT', 2)", "    attach('GEOMETRYLOAD', 'RoofLoad', 'Roof', [])");
+    L.push('', `addSet('GEOMETRYLOADSET', 'Flood')   # ${M.meta.fa_case}`);
+    bands.forEach((bd,i)=>{ const nm = 'p' + String(i).padStart(2,'0'); if (bd[2] > 0) L.push(`createSurfaceLoad('${nm}', 'Flood')`, `setParameter('GEOMETRYLOAD', '${nm}', 'LODTYP', 'FORCE')`, `setParameter('GEOMETRYLOAD', '${nm}', 'FORCE/VALUE', ${bd[2]})`, `setParameter('GEOMETRYLOAD', '${nm}', 'FORCE/DIRECT', 3)`, `attach('GEOMETRYLOAD', '${nm}', 'Band${String(i).padStart(2,'0')}', [])   # ${bd[0]}..${bd[1]} m`); });
+    if (fl.debris.applies) L.push("createPointLoad('Debris', 'Flood')", "setParameter('GEOMETRYLOAD', 'Debris', 'LODTYP', 'FORCE')", `setParameter('GEOMETRYLOAD', 'Debris', 'FORCE/VALUE', ${g4(fl.debris.F_di_kN*1000)})`, "setParameter('GEOMETRYLOAD', 'Debris', 'FORCE/DIRECT', 3)", `attach('GEOMETRYLOAD', 'Debris', 'Band%02d' % ${bandOf(fl.debris.at_y)}, [[B/2.0, ${fl.debris.at_y}, 0.0]])`);
+    L.push('', '# mesh and analysis', "setElementSize(front + ['Rear', 'Roof'] + slabs, 0.10)", 'generateMesh([])',
+      "addAnalysis('NL')", "addAnalysisCommand('NL', 'NONLIN', 'Structural nonlinear')",
+      "# load steps: Gravity (1.0) then Flood in increments (e.g. 0.05 x 20), Newton-Raphson; output DISPLA TOTAL, STRESS TOTAL CAUCHY, STRAIN CRACK",
+      "# runSolver('NL')");
+    return L.join('\n');
+  }
+
+  function download(name, text, mime){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type: mime||'text/plain'})); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+  document.querySelectorAll('.fbtn').forEach(bt => bt.addEventListener('click', () => {
+    if (!last) return; const M = femModel(); const stamp = new Date().toISOString().slice(0,10);
+    if (bt.dataset.x === 'json') download(`flood_frame_model_${stamp}.json`, JSON.stringify(M, null, 2), 'application/json');
+    if (bt.dataset.x === 'abq') download(`flood_frame_abaqus_${stamp}.py`, abaqusScript(M), 'text/x-python');
+    if (bt.dataset.x === 'diana') download(`flood_frame_diana_${stamp}.py`, dianaScript(M), 'text/x-python');
+  }));
+  window.FLOOD_EXPORT = {femModel, abaqusScript, dianaScript};
+
+  // ── input tabs
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+    document.querySelectorAll('.tabp').forEach(x => x.classList.toggle('on', x.dataset.tab === t.dataset.tab));
+  }));
+
+  // ── bridge to the MOGA surrogate (interactive_dashboard.html) ─────────────────
+  // demandAt(he, {wl, ep, s}): shear demand [kN] on a wall panel of tributary width wl when the effective
+  // water depth above grade on the flood-facing wall is he (m) — built from the loads currently selected
+  // in the Fa builder, with the same code-exact functions used for the card itself.
+  //   sta : water differential over he (basement: water excluded → extends to the basement floor), plus the
+  //         submerged-soil term ½(γs−γw)h_b² when a basement exists (ep=false switches it off);
+  //         s = 2 (wet floodproofing) equalises the basement → water differential over he only
+  //   dyn : ½ρCdV²·he per metre × wl          di : Eq. 5.4-20 point load, C_R(he), required when he > 0.91 m
+  let last = null;
+  function demandAt(he, o = {}){
+    if (!last) return {total: 0, parts: {sta: 0, dyn: 0, di: 0}};
+    const p = last.p, wl = o.wl ?? p.be, ep = o.ep !== false, s = o.s;
+    he = Math.max(0, he);
+    const parts = {sta: 0, dyn: 0, di: 0};
+    if (SEL.sta){
+      const excl = p.bs && s !== 2;
+      const rs = hydrostatic(p.Ge + he, p.Ge, p.ELb, excl, p.gs);
+      const F_dif = (p.bs && ep) ? 0.5 * (p.gs - GW) * Math.pow(Math.max(p.Ge - p.ELb, 0), 2) : 0;
+      parts.sta = (rs.F_w + F_dif) * wl;
+    }
+    if (SEL.dyn) parts.dyn = hydrodynamic(p, he).f_dyn * wl;
+    if (SEL.di){ const dd = debris(p, he); parts.di = dd.req ? dd.F_di : 0; }
+    return {total: parts.sta + parts.dyn + parts.di, parts};
+  }
+  window.FLOOD = {
+    demandAt,
+    get state(){ if (!last) return null; const {p, r, h, d, c} = last;
+      return {d_f: r.d_f, z: r.z, h_b: r.h_b, b_eff: p.be, L: p.Lp, t_w: p.tw, basement: p.bs, V: p.V, B: p.B,
+              F_sta: r.F_sta, f_dyn: h.f_dyn, F_dyn: h.F_dyn, F_di: d.req ? d.F_di : 0, Fa: c.F, M_Fa: c.M, DCR: c.DCR,
+              sel: {...SEL}, caseName: caseName(),
+              levels: {Ge: p.Ge, SWEL: p.SWEL, FFE: p.FFE, ELb: p.ELb, roof: p.FFE + p.n * p.hs, n: p.n, hs: p.hs, bs: p.bs}}; }
+  };
+
+  function update(){
+    const p = read();
+    $('vSWEL').textContent = `${(p.SWEL/FT).toFixed(2)} ft · ${f2(p.SWEL)} m`; $('vGe').textContent = `${(p.Ge/FT).toFixed(1)} ft · ${f2(p.Ge)} m`;
+    $('vFFE').textContent = `${(p.FFE/FT).toFixed(1)} ft`; $('vBE').textContent = `${(p.ELb/FT).toFixed(1)} ft`;
+    $('vN').textContent = p.n; $('vHs').textContent = `${f2(p.hs)} m`; $('vB').textContent = `${f1(p.B)} m`; $('vL').textContent = `${f1(p.L)} m`;
+    $('gBsmt').style.opacity = p.bs ? 1 : .35; $('fBE').disabled = !p.bs;
+    $('vRho').textContent = `${GW > 10 ? 1027 : 1000} kg/m³`; $('vV').textContent = `${f2(p.V)} m/s · ${(p.V/FT).toFixed(2)} ft/s`;
+    $('gCd').style.opacity = p.cdMode==='manual' ? 1 : .35; $('fCd').disabled = p.cdMode!=='manual';
+    const r = hydrostatic(p.SWEL, p.Ge, p.ELb, p.bs, p.gs);
+    const h = hydrodynamic(p, r.d_f); $('vCd').textContent = h.Cd.toFixed(2);
+    if (p.deb !== 'custom'){ const [W,k] = DEBRIS[p.deb]; $('fWd').value = W; $('fKd').value = k; p.Wd = W; p.kd = k; }
+    $('gWd').style.opacity = $('gKd').style.opacity = p.deb==='custom' ? 1 : .35; $('fWd').disabled = $('fKd').disabled = p.deb!=='custom';
+    $('vWd').textContent = `${p.Wd.toFixed(2)} kN`; $('vKd').textContent = `${p.kd.toLocaleString('en-US')} kN/m`; $('vCo').textContent = p.Co.toFixed(2);
+    $('gCs').style.opacity = p.csMode==='manual' ? 1 : .35; $('fCs').disabled = p.csMode!=='manual';
+    $('vDL').textContent = `${p.DL.toFixed(1)} kPa`; $('vLL').textContent = `${p.LL.toFixed(1)} kPa`; $('vRL').textContent = `${p.RL.toFixed(1)} kPa`; $('vTrib').textContent = `${p.trib.toFixed(1)} m`; $('vTs').textContent = `${p.ts.toFixed(2)} m`; $('vGm').textContent = `${p.gm.toFixed(1)} kN/m³`;
+    { const sv = sigmaV(p, p.Ge); $('vSv').textContent = `${sv.toFixed(0)} kPa (${(sv/p.gm).toFixed(1)} m of wall equiv.)`; }
+    $('vEm').textContent = `${p.Em.toFixed(1)} GPa`; $('vTw').textContent = `${p.tw.toFixed(2)} m`; $('vLp').textContent = `${p.Lp.toFixed(2)} m`; $('vBe').textContent = `${p.be.toFixed(2)} m`;
+    const d = debris(p, r.d_f); $('vCs').textContent = d.Cs.toFixed(2); $('vCR').textContent = d.CR.toFixed(2);
+    const c = combine(p, r, h, d);
+    draw(p, r, h, d); out(p, r, h, d); outFa(p, c);
+    last = {p, r, h, d, c};
+    { const roof = p.FFE + p.n*p.hs, base = p.bs ? p.ELb : p.Ge; const fls = floorLine(p);
+      const fn = $('femNote'); if (fn) fn.innerHTML = `Frame: front wall ${f1(p.B)} × ${f2(roof-base)} × ${p.tw.toFixed(2)} m + rear wall over a ${p.trib.toFixed(1)} m span · slabs ${p.ts.toFixed(2)} m at every floor and at the roof · vertical load: self-weight${(p.DL+p.LL+p.RL)>0?` + superimposed (floors ${p.DL}+${p.LL}, roof ${p.RL} kPa)`:' only (no live load, no snow — flood-moment analysis)'} · side walls restrain the slab edges · base ${p.bs?'basement floor':'grade'} · vertical: self-weight γ ${p.gm} kN/m³ + ` + fls.map(f=>`${f.name} ${f.w.toFixed(1)} kN/m`).join(', ') + ` → σ<sub>v</sub> ${sigmaV(p,p.Ge).toFixed(0)} kPa at grade, ${sigmaV(p,base).toFixed(0)} kPa at the base · flood: ${caseName()} (${f1(c.F)} kN/m) · material placeholders E ${p.Em} GPa, f<sub>t</sub> ${$('fFt').value} kPa. Abaqus script builds the model in CAE (linear first, <code>NONLINEAR=True</code> for CDP); DIANA script is a template to validate against your API version.`; }
+    window.dispatchEvent(new CustomEvent('floodloads:update'));
+  }
+  ids.forEach(id => $(id).addEventListener('input', update));
+  update();
+})();
+</script>
+</body>
+</html>
