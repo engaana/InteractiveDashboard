@@ -751,7 +751,7 @@ details.notes[open] summary::before{transform:rotate(90deg)}
     get state(){ if (!last) return null; const {p, r, h, d, c} = last;
       return {d_f: r.d_f, z: r.z, h_b: r.h_b, b_eff: p.be, L: p.Lp, t_w: p.tw, basement: p.bs, V: p.V, B: p.B,
               F_sta: r.F_sta, f_dyn: h.f_dyn, F_dyn: h.F_dyn, F_di: d.req ? d.F_di : 0, Fa: c.F, M_Fa: c.M, DCR: c.DCR,
-              sel: {...SEL}, caseName: caseName(),
+              sel: {...SEL}, caseName: caseName(), params: {...p, GW},   // full card inputs (for the Python engine: flood_demand.py)
               levels: {Ge: p.Ge, SWEL: p.SWEL, FFE: p.FFE, ELb: p.ELb, roof: p.FFE + p.n * p.hs, n: p.n, hs: p.hs, bs: p.bs}}; }
   };
 

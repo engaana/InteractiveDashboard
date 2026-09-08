@@ -9,12 +9,20 @@ Link the MOGA surrogate of interactive_dashboard.html to the Flood Loads card (w
   (hydrostatic with basement / submerged soil, hydrodynamic, debris) — instead of ½γh²·wl + Rankine earth pressure.
 - baseline(): same demand at the design depth.
 - The dashboard re-renders on every change of the card ('floodloads:update').
-Idempotent: guarded by the LINK marker. Run AFTER integrate_flood_section.py.
+- v4: ▶ RUN MOGA ENGINE posts the card state (window.FLOOD.state: inputs + Fa selection) and the
+  profile flags (shear cap., soil term, out-of-plane, PH pinned to d_f) to moga_server.py, so the real
+  NSGA-II (moga_flood_preservation.py + flood_demand.py) runs with the same ASCE 7-22 S2 demand.
+- v5: depth sweep — ▶ RUN can run the engine at d = frac · d_f (PH pinned to d in each run); the 3D chart
+  sizes the points by depth and stars the winner of every depth; a strip of chips shows Fa and the winner
+  per depth and the tipping depth (first depth won by wet floodproofing).
+Idempotent: guarded by the LINK markers (v3 → v4 → v5 on an already-linked file). Run AFTER integrate_flood_section.py.
 usage: python3 link_flood_loads.py interactive_dashboard.html
 """
 import sys, re, shutil, datetime
 
 MARK = '/* FLOOD-LINK v3 */'
+MARK4 = '/* FLOOD-LINK v4 */'
+MARK5 = '/* FLOOD-LINK v5 */'
 
 
 DRAW_SECTION = r"""        function drawSection(w, inp) {
@@ -90,10 +98,87 @@ def sub1(s, old, new, label):
     return s.replace(old, new, 1)
 
 
+def link_v4(s):
+    """Live MOGA run: send the Flood Loads card state to the server (POST) instead of the retired sliders."""
+    s = sub1(s, "            const url = `/api/run?seeds=${seeds}&gens=${gens}&fd=${inp.fd}&sc=${inp.sc}&wl=${inp.wl}&bh=${inp.bh}`;\n",
+             "            const url = `/api/run?seeds=${seeds}&gens=${gens}&fd=${inp.fd}&sc=${inp.sc}&wl=${inp.wl}&bh=${inp.bh}`;\n"
+             "            const FS = window.FLOOD && window.FLOOD.state;   " + MARK4 + "\n"
+             "            // with the card present: POST its full state (inputs + Fa selection) and the profile flags → ASCE 7-22 S2 demand in the engine\n"
+             "            const req = FS ? { method: 'POST', headers: { 'Content-Type': 'application/json' },\n"
+             "                               body: JSON.stringify({ seeds: +seeds, gens: +gens, profile: { sc: inp.sc, ep: inp.ep, op: inp.op, dfe: inp.dfe }, flood: FS }) } : undefined;\n", 'live-run url')
+    s = sub1(s, "            mogaStatus.textContent = `Running NSGA-II (${seeds} seeds × ${gens} gens, pop 50)… watch progress in the terminal`;",
+             "            mogaStatus.textContent = `Running NSGA-II (${seeds} seeds × ${gens} gens, pop 50) · ${FS ? FS.caseName + ' · Fa ' + FS.Fa.toFixed(1) + ' kN/m' + (inp.dfe ? ' · PH = d_f' : '') : 'legacy model'}… watch progress in the terminal`;", 'live-run status')
+    s = sub1(s, "                const r = await fetch(url);", "                const r = await fetch(url, req);", 'live-run fetch')
+    s = sub1(s, "values (d_f, b_eff and h_b from the Flood Loads card, shear cap. slider)",
+             "values (d_f, b_eff, h_b and the selected F<sub>a</sub> case from the Flood Loads card; shear cap., soil term, out-of-plane and PH-to-DFE toggles)", 'live-run text')
+    return s
+
+
+SWEEP_JS = r"""
+            // depth sweep results: chips per depth + tipping depth   """ + MARK5 + r"""
+            const strip = document.getElementById('sweepStrip');
+            if (d.sweep) {
+                const SCc = { 0: '#c44e52', 1: '#4c72b0', 2: '#55a868' };
+                strip.style.display = 'flex';
+                strip.innerHTML = d.sweep.map(r => `<div style="border:1px solid ${SCc[r.winner.strategy]};border-left:4px solid ${SCc[r.winner.strategy]};border-radius:8px;padding:5px 9px;font:500 10.5px Inter;color:var(--muted);background:var(--card);min-width:118px">` +
+                    `<div style="font:700 11.5px Inter;color:var(--ink)">d = ${r.d.toFixed(2)} m <span style="color:var(--dim);font-weight:500">(${r.frac}·d_f)</span></div>` +
+                    `<div>F<sub>a</sub> ${r.Fa.toFixed(1)} kN · di ${r.Fa_parts.di.toFixed(0)}</div>` +
+                    `<div style="color:${SCc[r.winner.strategy]};font-weight:700">S${r.winner.strategy} ${r.winner.strategy === 2 ? 'wet' : r.winner.strategy === 1 ? 'barrier' : 'sealant'} · ${r.winner.objectives.map(x => x.toFixed(0)).join(' / ')}</div></div>`).join('') +
+                    `<div style="align-self:center;font:700 11px Inter;color:${d.tipping_depth ? '#15803d' : 'var(--muted)'};padding:4px 8px">${d.tipping_depth ? '⇢ dry → wet from d ≥ ' + d.tipping_depth.toFixed(2) + ' m (' + (d.tipping_depth / 0.3048).toFixed(1) + ' ft)' : 'no flip to wet floodproofing in this range'}</div>`;
+            } else { strip.style.display = 'none'; strip.innerHTML = ''; }
+"""
+
+
+def link_v5(s):
+    """Depth sweep: run the engine at several fractions of d_f and show the winner per depth."""
+    s = sub1(s, "                    <span id=\"mogaStatus\" class=\"sub\" style=\"font-size:.72rem\"></span>\n                </div>\n",
+             "                    <select id=\"selSweep\" title=\"Depth sweep: run the engine at d = frac · d_f, protection height pinned to d in each run\"\n"
+             "                        style=\"border:1px solid var(--border);border-radius:8px;padding:6px 8px;font:600 11px Inter;color:var(--muted);background:var(--card)\">\n"
+             "                        <option value=\"\" selected>single run at d_f</option>\n"
+             "                        <option value=\"0.25,0.5,0.75,1\">sweep d_f · 4 depths (¼ … 1)</option>\n"
+             "                        <option value=\"0.25,0.5,0.75,1,1.25\">sweep d_f · 5 depths (¼ … 1¼)</option>\n"
+             "                        <option value=\"0.125,0.25,0.375,0.5,0.625,0.75,0.875,1,1.25\">sweep d_f · 9 depths (⅛ … 1¼)</option>\n"
+             "                    </select>\n"
+             "                    <span id=\"mogaStatus\" class=\"sub\" style=\"font-size:.72rem\"></span>\n                </div>\n"
+             "                <div id=\"sweepStrip\" style=\"display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px\"></div>\n", 'sweep select')
+    s = sub1(s, "            const req = FS ? { method: 'POST', headers: { 'Content-Type': 'application/json' },\n"
+                "                               body: JSON.stringify({ seeds: +seeds, gens: +gens, profile: { sc: inp.sc, ep: inp.ep, op: inp.op, dfe: inp.dfe }, flood: FS }) } : undefined;\n",
+             "            const sweepSel = document.getElementById('selSweep').value, sweep = (FS && sweepSel) ? sweepSel.split(',').map(Number) : null;   " + MARK5 + "\n"
+             "            const req = FS ? { method: 'POST', headers: { 'Content-Type': 'application/json' },\n"
+             "                               body: JSON.stringify({ seeds: +seeds, gens: +gens, profile: { sc: inp.sc, ep: inp.ep, op: inp.op, dfe: inp.dfe }, flood: FS, sweep }) } : undefined;\n", 'sweep request')
+    s = sub1(s, "            mogaStatus.textContent = `Running NSGA-II (${seeds} seeds × ${gens} gens, pop 50) · ${FS ? FS.caseName",
+             "            mogaStatus.textContent = `Running NSGA-II (${seeds} seeds × ${gens} gens, pop 50${sweep ? ' × ' + sweep.length + ' depths' : ''}) · ${FS ? FS.caseName", 'sweep status')
+    s = sub1(s, "                mogaData = d; drawMoga3D();\n                const w = d.winner;\n",
+             "                mogaData = d; drawMoga3D();\n                const w = d.winner;\n" + SWEEP_JS, 'sweep chips')
+    s = sub1(s, "                mogaStatus.textContent = `✓ Done in ${d.meta.runtime_seconds}s · ${d.points.length} Pareto points · winner S${w.strategy}",
+             "                mogaStatus.textContent = `✓ Done in ${d.meta.runtime_seconds}s · ${d.points.length} Pareto points${d.sweep ? ' over ' + d.sweep.length + ' depths · at d_f:' : ' ·'} winner S${w.strategy}", 'sweep done text')
+    # 3D chart (drawMoga3D only — draw3DPareto shares the same legend code): point size by depth, one star per depth
+    head, s = s[:s.index('        function drawMoga3D() {')], s[s.index('        function drawMoga3D() {'):]
+    s = sub1(s, "                return { ...pp, s: p.s, st: p.st, pr: p.pr, ut: p.ut };\n            });",
+             "                return { ...pp, s: p.s, st: p.st, pr: p.pr, ut: p.ut, d: p.d };\n            });\n"
+             "            const dRef = (mogaData.meta && mogaData.meta.d_f) || 1;   " + MARK5 + " // point radius grows with the depth of its run", '3D projected')
+    s = sub1(s, "                ctx.beginPath(); ctx.arc(p.sx, p.sy, 3, 0, Math.PI * 2);\n                ctx.fillStyle = SC[p.s]; ctx.globalAlpha = 0.45; ctx.fill();",
+             "                ctx.beginPath(); ctx.arc(p.sx, p.sy, p.d != null ? 1.5 + 3.5 * Math.min(p.d / dRef, 1.3) : 3, 0, Math.PI * 2);\n                ctx.fillStyle = SC[p.s]; ctx.globalAlpha = p.d != null ? 0.35 : 0.45; ctx.fill();", '3D radius')
+    s = sub1(s, "            // Legend\n            ctx.font = '500 10px Inter'; ctx.textAlign = 'left'; ctx.globalAlpha = 1;",
+             "            // depth-sweep winners: a small star per depth, labelled with d\n"
+             "            if (mogaData.sweep) for (const r of mogaData.sweep) {\n"
+             "                const o = r.winner.objectives, q = projectM(o[0]/100*50-25, o[1]/100*50-25, o[2]/100*50-25, cx, cy, scale);\n"
+             "                drawStar(ctx, q.sx, q.sy, 5, 6, 3); ctx.fillStyle = SC[r.winner.strategy]; ctx.globalAlpha = 0.9; ctx.fill(); ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 0.8; ctx.stroke(); ctx.globalAlpha = 1;\n"
+             "                ctx.font = '600 9px Inter'; ctx.fillStyle = '#334155'; ctx.textAlign = 'left'; ctx.fillText(r.d.toFixed(2) + ' m → S' + r.winner.strategy, q.sx + 8, q.sy - 4);\n"
+             "            }\n"
+             "            // Legend\n            ctx.font = '500 10px Inter'; ctx.textAlign = 'left'; ctx.globalAlpha = 1;", '3D sweep stars')
+    s = sub1(s, "            ctx.fillText(pts.length + ' Pareto-front points across ' + nSeeds + ' seeds', W - 16, H - 10);",
+             "            ctx.fillText(pts.length + ' Pareto-front points across ' + nSeeds + ' seeds' + (mogaData.sweep ? ' × ' + mogaData.sweep.length + ' depths (point size ∝ d)' : ''), W - 16, H - 10);", '3D count label')
+    return head + s
+
+
 def link(path):
     s = open(path, encoding='utf-8').read()
     if MARK in s:
-        print('already linked'); return
+        if MARK5 in s:
+            print('already linked'); return
+        if MARK4 not in s: s = link_v4(s)
+        s = link_v5(s); open(path, 'w', encoding='utf-8').write(s); print('linked v4/v5', path); return
     shutil.copy(path, path.replace('.html', f'_prelink_{datetime.date.today():%Y%m%d}.html'))
 
     # ---- top bar -------------------------------------------------------------------------------
@@ -185,6 +270,8 @@ def link(path):
              '<strong style="color:var(--ink)">F<sub>a</sub> selected in the Flood Loads card</strong> (ASCE 7-22 S2 hydrostatic / hydrodynamic / debris), '
              'evaluated at each hydrograph depth; d<sub>f</sub>, b<sub>eff</sub> and h<sub>b</sub> are read from it — the Flood Depth, Wall Length and Basement H sliders were retired.</span>\n'
              '                <span><span class="src-badge src-moga">🧬 MOGA Engine · Python</span>', 'src-note')
+    s = link_v4(s)
+    s = link_v5(s)
     open(path, 'w', encoding='utf-8').write(s)
     print('linked', path)
 

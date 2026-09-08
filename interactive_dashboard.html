@@ -1163,7 +1163,7 @@
     get state(){ if (!last) return null; const {p, r, h, d, c} = last;
       return {d_f: r.d_f, z: r.z, h_b: r.h_b, b_eff: p.be, L: p.Lp, t_w: p.tw, basement: p.bs, V: p.V, B: p.B,
               F_sta: r.F_sta, f_dyn: h.f_dyn, F_dyn: h.F_dyn, F_di: d.req ? d.F_di : 0, Fa: c.F, M_Fa: c.M, DCR: c.DCR,
-              sel: {...SEL}, caseName: caseName(),
+              sel: {...SEL}, caseName: caseName(), params: {...p, GW},   // full card inputs (for the Python engine: flood_demand.py)
               levels: {Ge: p.Ge, SWEL: p.SWEL, FFE: p.FFE, ELb: p.ELb, roof: p.FFE + p.n * p.hs, n: p.n, hs: p.hs, bs: p.bs}}; }
   };
 
@@ -1321,10 +1321,18 @@
                         <option value="150">150 generations</option>
                         <option value="300">300 generations (full)</option>
                     </select>
+                    <select id="selSweep" title="Depth sweep: run the engine at d = frac · d_f, protection height pinned to d in each run"
+                        style="border:1px solid var(--border);border-radius:8px;padding:6px 8px;font:600 11px Inter;color:var(--muted);background:var(--card)">
+                        <option value="" selected>single run at d_f</option>
+                        <option value="0.25,0.5,0.75,1">sweep d_f · 4 depths (¼ … 1)</option>
+                        <option value="0.25,0.5,0.75,1,1.25">sweep d_f · 5 depths (¼ … 1¼)</option>
+                        <option value="0.125,0.25,0.375,0.5,0.625,0.75,0.875,1,1.25">sweep d_f · 9 depths (⅛ … 1¼)</option>
+                    </select>
                     <span id="mogaStatus" class="sub" style="font-size:.72rem"></span>
                 </div>
+                <div id="sweepStrip" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
                 <p class="sub" style="font-size:.7rem;margin-bottom:8px;color:var(--dim)">Live runs use the current
-                    <strong style="color:var(--muted)">Building Profile</strong> values (d_f, b_eff and h_b from the Flood Loads card, shear cap. slider) and require the local server: <code>python moga_server.py</code>.</p>
+                    <strong style="color:var(--muted)">Building Profile</strong> values (d_f, b_eff, h_b and the selected F<sub>a</sub> case from the Flood Loads card; shear cap., soil term, out-of-plane and PH-to-DFE toggles) and require the local server: <code>python moga_server.py</code>.</p>
             <canvas id="mogaPareto3D" width="900" height="500" style="cursor:grab"></canvas>
         </section>
             <article class="card">
@@ -1913,14 +1921,15 @@
             const projected = pts.map(p => {
                 const nx = p.st/100*50-25, ny = p.pr/100*50-25, nz = p.ut/100*50-25;
                 const pp = projectM(nx, ny, nz, cx, cy, scale);
-                return { ...pp, s: p.s, st: p.st, pr: p.pr, ut: p.ut };
+                return { ...pp, s: p.s, st: p.st, pr: p.pr, ut: p.ut, d: p.d };
             });
+            const dRef = (mogaData.meta && mogaData.meta.d_f) || 1;   /* FLOOD-LINK v5 */ // point radius grows with the depth of its run
             projected.sort((a,b) => a.depth - b.depth);
 
             // Draw points
             for (const p of projected) {
-                ctx.beginPath(); ctx.arc(p.sx, p.sy, 3, 0, Math.PI * 2);
-                ctx.fillStyle = SC[p.s]; ctx.globalAlpha = 0.45; ctx.fill();
+                ctx.beginPath(); ctx.arc(p.sx, p.sy, p.d != null ? 1.5 + 3.5 * Math.min(p.d / dRef, 1.3) : 3, 0, Math.PI * 2);
+                ctx.fillStyle = SC[p.s]; ctx.globalAlpha = p.d != null ? 0.35 : 0.45; ctx.fill();
                 ctx.globalAlpha = 1;
             }
 
@@ -1936,6 +1945,12 @@
                 ctx.fillText('Winner: S' + win.strategy + ' (' + win.objectives[0].toFixed(0) + ', ' + win.objectives[1].toFixed(0) + ', ' + win.objectives[2].toFixed(0) + ')', wn.sx + 14, wn.sy + 4);
             }
 
+            // depth-sweep winners: a small star per depth, labelled with d
+            if (mogaData.sweep) for (const r of mogaData.sweep) {
+                const o = r.winner.objectives, q = projectM(o[0]/100*50-25, o[1]/100*50-25, o[2]/100*50-25, cx, cy, scale);
+                drawStar(ctx, q.sx, q.sy, 5, 6, 3); ctx.fillStyle = SC[r.winner.strategy]; ctx.globalAlpha = 0.9; ctx.fill(); ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 0.8; ctx.stroke(); ctx.globalAlpha = 1;
+                ctx.font = '600 9px Inter'; ctx.fillStyle = '#334155'; ctx.textAlign = 'left'; ctx.fillText(r.d.toFixed(2) + ' m → S' + r.winner.strategy, q.sx + 8, q.sy - 4);
+            }
             // Legend
             ctx.font = '500 10px Inter'; ctx.textAlign = 'left'; ctx.globalAlpha = 1;
             const lx = 16, ly = 16;
@@ -1950,7 +1965,7 @@
             // Point count label
             ctx.font = '500 9px Inter'; ctx.fillStyle = '#64748b'; ctx.textAlign = 'right';
             const nSeeds = (mogaData.meta && mogaData.meta.seeds) ? mogaData.meta.seeds.length : 20;
-            ctx.fillText(pts.length + ' Pareto-front points across ' + nSeeds + ' seeds', W - 16, H - 10);
+            ctx.fillText(pts.length + ' Pareto-front points across ' + nSeeds + ' seeds' + (mogaData.sweep ? ' × ' + mogaData.sweep.length + ' depths (point size ∝ d)' : ''), W - 16, H - 10);
         }
 
         // MOGA data embedded from the Python run (moga_pareto_data.json)
@@ -1965,17 +1980,34 @@
             const seeds = document.getElementById('selSeeds').value;
             const gens = document.getElementById('selGens').value;
             const url = `/api/run?seeds=${seeds}&gens=${gens}&fd=${inp.fd}&sc=${inp.sc}&wl=${inp.wl}&bh=${inp.bh}`;
+            const FS = window.FLOOD && window.FLOOD.state;   /* FLOOD-LINK v4 */
+            // with the card present: POST its full state (inputs + Fa selection) and the profile flags → ASCE 7-22 S2 demand in the engine
+            const sweepSel = document.getElementById('selSweep').value, sweep = (FS && sweepSel) ? sweepSel.split(',').map(Number) : null;   /* FLOOD-LINK v5 */
+            const req = FS ? { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ seeds: +seeds, gens: +gens, profile: { sc: inp.sc, ep: inp.ep, op: inp.op, dfe: inp.dfe }, flood: FS, sweep }) } : undefined;
             btnRun.disabled = true; btnRun.style.opacity = .5;
-            mogaStatus.textContent = `Running NSGA-II (${seeds} seeds × ${gens} gens, pop 50)… watch progress in the terminal`;
+            mogaStatus.textContent = `Running NSGA-II (${seeds} seeds × ${gens} gens, pop 50${sweep ? ' × ' + sweep.length + ' depths' : ''}) · ${FS ? FS.caseName + ' · Fa ' + FS.Fa.toFixed(1) + ' kN/m' + (inp.dfe ? ' · PH = d_f' : '') : 'legacy model'}… watch progress in the terminal`;
             mogaStatus.style.color = 'var(--accent2)';
             try {
-                const r = await fetch(url);
+                const r = await fetch(url, req);
                 if (!r.ok) throw new Error('HTTP ' + r.status);
                 const d = await r.json();
                 if (d.error) throw new Error(d.error);
                 mogaData = d; drawMoga3D();
                 const w = d.winner;
-                mogaStatus.textContent = `✓ Done in ${d.meta.runtime_seconds}s · ${d.points.length} Pareto points · winner S${w.strategy} (PH ${w.protection_height.toFixed(2)} m, VIF ${w.visual_impact_factor.toFixed(2)}) · objectives (${w.objectives.join(', ')})`;
+
+            // depth sweep results: chips per depth + tipping depth   /* FLOOD-LINK v5 */
+            const strip = document.getElementById('sweepStrip');
+            if (d.sweep) {
+                const SCc = { 0: '#c44e52', 1: '#4c72b0', 2: '#55a868' };
+                strip.style.display = 'flex';
+                strip.innerHTML = d.sweep.map(r => `<div style="border:1px solid ${SCc[r.winner.strategy]};border-left:4px solid ${SCc[r.winner.strategy]};border-radius:8px;padding:5px 9px;font:500 10.5px Inter;color:var(--muted);background:var(--card);min-width:118px">` +
+                    `<div style="font:700 11.5px Inter;color:var(--ink)">d = ${r.d.toFixed(2)} m <span style="color:var(--dim);font-weight:500">(${r.frac}·d_f)</span></div>` +
+                    `<div>F<sub>a</sub> ${r.Fa.toFixed(1)} kN · di ${r.Fa_parts.di.toFixed(0)}</div>` +
+                    `<div style="color:${SCc[r.winner.strategy]};font-weight:700">S${r.winner.strategy} ${r.winner.strategy === 2 ? 'wet' : r.winner.strategy === 1 ? 'barrier' : 'sealant'} · ${r.winner.objectives.map(x => x.toFixed(0)).join(' / ')}</div></div>`).join('') +
+                    `<div style="align-self:center;font:700 11px Inter;color:${d.tipping_depth ? '#15803d' : 'var(--muted)'};padding:4px 8px">${d.tipping_depth ? '⇢ dry → wet from d ≥ ' + d.tipping_depth.toFixed(2) + ' m (' + (d.tipping_depth / 0.3048).toFixed(1) + ' ft)' : 'no flip to wet floodproofing in this range'}</div>`;
+            } else { strip.style.display = 'none'; strip.innerHTML = ''; }
+                mogaStatus.textContent = `✓ Done in ${d.meta.runtime_seconds}s · ${d.points.length} Pareto points${d.sweep ? ' over ' + d.sweep.length + ' depths · at d_f:' : ' ·'} winner S${w.strategy} (PH ${w.protection_height.toFixed(2)} m, VIF ${w.visual_impact_factor.toFixed(2)}) · objectives (${w.objectives.join(', ')})`;
                 mogaStatus.style.color = 'var(--green)';
             } catch (e) {
                 mogaStatus.textContent = 'Engine offline — start it with “python moga_server.py” and open the dashboard at http://localhost:8000. Showing the embedded run.';

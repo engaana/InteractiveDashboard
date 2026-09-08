@@ -1,0 +1,10 @@
+
+=== Consultant Report ===
+Building: Two-story unreinforced masonry (URM) with basement in FEMA AE Zone
+Flood demand: ASCE 7-22 S2 — LC1 · sustained (d_f 2.15 m, b_eff 1.00 m, h_b 1.22 m)
+Protection height pinned to the DFE: PH = d_f = 2.15 m
+Selected Strategy: Dry Floodproofing (Removable Barrier)
+Selected Genes: protection_height=2.15 m, visual_impact_factor=0.05
+Selected Objectives: Structural=36.0, Preservation=95.7, Utility=92.7
+No-Measure Baseline: Structural=17.7, Preservation=13.2, Utility=3.7
+Trade-off Rationale: We selected Strategy 1 because although Strategy Dry Floodproofing (Sealant/Coating) can block more water in idealized cases, it violates NPS Standard 9 risk boundaries by increasing irreversible masonry moisture/salt damage.

@@ -1,0 +1,10 @@
+
+=== Consultant Report ===
+Building: Two-story unreinforced masonry (URM) with basement in FEMA AE Zone
+Flood demand: ASCE 7-22 S2 — LC2 · impact (d_f 2.15 m, b_eff 1.00 m, h_b 1.22 m)
+Protection height pinned to the DFE: PH = d_f = 2.15 m
+Selected Strategy: Wet Floodproofing (Hydrostatic Vents)
+Selected Genes: protection_height=2.15 m, visual_impact_factor=0.10
+Selected Objectives: Structural=97.7, Preservation=89.9, Utility=11.0
+No-Measure Baseline: Structural=0.0, Preservation=13.2, Utility=3.7
+Trade-off Rationale: We selected Strategy 2 because although Strategy Dry Floodproofing (Sealant/Coating) can block more water in idealized cases, it violates NPS Standard 9 risk boundaries by increasing irreversible masonry moisture/salt damage.

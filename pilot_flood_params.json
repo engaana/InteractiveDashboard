@@ -1,0 +1,43 @@
+{
+ "_note": "window.FLOOD.state of the Flood Loads card at the Old Labor Hall pilot inputs (46 Granite St, Barre VT) \u2014 SI units; elevations m NAVD88",
+ "params": {
+  "bs": true,
+  "SWEL": 184.11444,
+  "Ge": 181.96560000000002,
+  "FFE": 183.55056000000002,
+  "ELb": 180.74640000000002,
+  "n": 2,
+  "hs": 3,
+  "B": 18.3,
+  "L": 30,
+  "gs": 11.78,
+  "V": 1.85,
+  "cdMode": "auto",
+  "Cd": 1.25,
+  "deb": "log",
+  "Wd": 4.45,
+  "kd": 61294,
+  "Co": 0.8,
+  "csMode": "lb",
+  "Cs": 1,
+  "keMode": "series",
+  "Em": 5,
+  "tw": 0.35,
+  "Lp": 3.5,
+  "be": 1,
+  "Kbc": 48,
+  "DL": 0,
+  "LL": 0,
+  "RL": 0,
+  "trib": 6,
+  "gm": 18,
+  "ts": 0.2,
+  "slabMat": "concrete",
+  "GW": 9.81
+ },
+ "sel": {
+  "sta": true,
+  "dyn": true,
+  "di": true
+ }
+}

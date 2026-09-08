@@ -7,8 +7,12 @@ import random
 from statistics import mean
 from typing import Dict, List, Tuple
 
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
+try:  # matplotlib is only needed for the figures (generate_visualizations); the engine and the server run without it
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle
+except ImportError:  # pragma: no cover
+    plt = None
+    Rectangle = None
 
 
 BUILDING_PROFILE = {
@@ -51,6 +55,95 @@ MODEL_PARAMS = {
     "barrier_deployment_fail_prob": 0.08,
     "barrier_deployment_fail_range": (0.05, 0.15),
 }
+
+# ---- Link to the ASCE 7-22 Supplement 2 flood loads (dashboard card) ---------------------------------
+# FLOOD_DEMAND: a flood_demand.FloodDemand built from the card's inputs (window.FLOOD.state / pilot_flood_params.json).
+#   When set, objective_structural() evaluates the demand on the wall with the load components selected in the
+#   card's Fa builder (hydrostatic with basement + submerged soil, hydrodynamic, debris impact) at every hydrograph
+#   depth — the same physics as the dashboard surrogate — instead of the legacy ½γh²·L + Rankine earth pressure.
+#   When None, the engine behaves exactly as before (legacy model).
+# PH_FIXED: pin the protection-height gene (m) — dry floodproofing to the DFE (ASCE 24), i.e. PH = d_f — or None
+#   to keep the free 0–3.5 m gene.
+FLOOD_DEMAND = None
+PH_FIXED: float | None = None
+
+
+def apply_profile(profile: dict, flood_state: dict | None = None) -> None:
+    """Configure the engine from the dashboard: profile = {fd, sc, wl, bh, ep, op, dfe}, flood_state = window.FLOOD.state."""
+    global FLOOD_DEMAND, PH_FIXED
+    if flood_state is not None:
+        from flood_demand import FloodDemand
+
+        FLOOD_DEMAND = FloodDemand.from_state(flood_state)
+        BUILDING_PROFILE["design_flood_depth_m"] = FLOOD_DEMAND.d_f
+        BUILDING_PROFILE["wall_length_m"] = FLOOD_DEMAND.b_eff
+        BUILDING_PROFILE["basement_wall_height_m"] = FLOOD_DEMAND.h_b
+    else:
+        FLOOD_DEMAND = None
+    for key, name in (("fd", "design_flood_depth_m"), ("sc", "masonry_shear_capacity_kN"),
+                      ("wl", "wall_length_m"), ("bh", "basement_wall_height_m")):
+        # with the card present only "sc" (slider) and "fd" (depth sweep override) may replace the card's values
+        if profile.get(key) is not None and (flood_state is None or key in ("sc", "fd")):
+            BUILDING_PROFILE[name] = float(profile[key])
+    if profile.get("ep") is not None:
+        MODEL_PARAMS["include_earth_pressure"] = bool(profile["ep"])
+    if profile.get("op") is not None:
+        MODEL_PARAMS["include_out_of_plane"] = bool(profile["op"])
+    PH_FIXED = round(BUILDING_PROFILE["design_flood_depth_m"], 2) if profile.get("dfe") else None
+
+
+def candidate_point(seed: int, c: "DesignCandidate", **extra) -> dict:
+    """Dashboard-ready record of a candidate (format expected by drawMoga3D)."""
+    return {"seed": seed, "s": c.intervention_strategy, "st": round(c.objectives[0], 2), "pr": round(c.objectives[1], 2),
+            "ut": round(c.objectives[2], 2), "ph": round(c.protection_height, 3), "vif": round(c.visual_impact_factor, 3), **extra}
+
+
+def winner_record(c: "DesignCandidate") -> dict:
+    return {"strategy": c.intervention_strategy, "strategy_name": STRATEGY_NAMES[c.intervention_strategy],
+            "protection_height": round(c.protection_height, 3), "visual_impact_factor": round(c.visual_impact_factor, 3),
+            "objectives": [round(x, 2) for x in c.objectives]}
+
+
+def run_depth_sweep(fracs: List[float], seeds: List[int], generations: int, profile: dict, flood_state: dict) -> dict:
+    """Run the MOGA at several flood depths d = frac · d_f (protection height pinned to d in each run).
+
+    Answers "at which depth does the winner flip from dry to wet floodproofing?" — the demand at each depth
+    comes from the Flood Loads card physics (hydrostatic, hydrodynamic, debris — the debris term enters above
+    0.91 m and reaches its full value at 1.52 m). Returns dashboard-ready JSON: all Pareto points tagged with
+    their depth (d, frac), one consensus winner per depth (sweep) and the winner at the design depth.
+    """
+    from flood_demand import FloodDemand
+
+    d_f = FloodDemand.from_state(flood_state).d_f
+    sweep, points = [], []
+    for fr in fracs:
+        d = round(fr * d_f, 3)
+        apply_profile({**profile, "fd": d, "dfe": True}, flood_state)
+        winners, fronts = [], {}
+        for sd in seeds:
+            w, pop, _ = run_moga(seed=sd, population_size=50, generations=generations)
+            winners.append(w)
+            fronts[sd] = fast_non_dominated_sort(pop)[0]
+        cons = max(winners, key=lambda c: min(c.objectives))
+        Fa = FLOOD_DEMAND.demand(d, BUILDING_PROFILE["wall_length_m"], MODEL_PARAMS["include_earth_pressure"], -1)
+        n0 = len(points)
+        for sd, front in fronts.items():
+            points.extend(candidate_point(sd, c, d=d, frac=fr) for c in front)
+        sweep.append({"frac": fr, "d": d, "Fa": round(Fa["total"], 2), "Fa_parts": {k: round(v, 2) for k, v in Fa.items() if k != "total"},
+                      "winner": winner_record(cons), "n_points": len(points) - n0,
+                      "seed_winners": [winner_record(w) for w in winners]})
+        print(f"Sweep d = {d:.2f} m ({fr:.3g}·d_f): Fa = {Fa['total']:.1f} kN → S{cons.intervention_strategy} {STRATEGY_NAMES[cons.intervention_strategy]} "
+              f"objectives={tuple(round(x, 1) for x in cons.objectives)}")
+    # design-depth winner: the run closest to frac = 1
+    ref = min(sweep, key=lambda r: abs(r["frac"] - 1.0))
+    flip = next((r for r in sweep if r["winner"]["strategy"] == 2), None)
+    return {"d_f": d_f, "sweep": sweep, "points": points, "winner": ref["winner"],
+            "tipping_depth": flip["d"] if flip else None}
+
+
+def ph_gene(v: float) -> float:
+    """Protection-height gene: pinned to the DFE when PH_FIXED is set, else clamped to the 0–3.5 m design space."""
+    return PH_FIXED if PH_FIXED is not None else clamp(v, 0.0, 3.5)
 
 
 @dataclass
@@ -205,9 +298,13 @@ def objective_structural(candidate: DesignCandidate, scenario: Dict[str, float])
                 ]
         elif strategy == 2:
             h_eff = MODEL_PARAMS["wet_pressure_factor"] * d
-        f = hydrostatic_force_kN(h_eff, wall_length=wall_l, gamma=gamma)
-        if MODEL_PARAMS["include_earth_pressure"]:
-            f += earth_pressure_force_kN(min(basement_h, h_eff), wall_l, gamma_soil, k0)
+        if FLOOD_DEMAND is not None:
+            # ASCE 7-22 S2 demand selected in the Flood Loads card (hydrostatic / hydrodynamic / debris) on the panel
+            f = FLOOD_DEMAND.demand(h_eff, wall_l, MODEL_PARAMS["include_earth_pressure"], strategy)["total"]
+        else:
+            f = hydrostatic_force_kN(h_eff, wall_length=wall_l, gamma=gamma)
+            if MODEL_PARAMS["include_earth_pressure"]:
+                f += earth_pressure_force_kN(min(basement_h, h_eff), wall_l, gamma_soil, k0)
         peak_force = max(peak_force, f)
 
     # Optional out-of-plane bending check (converted to equivalent force capacity).
@@ -269,11 +366,14 @@ def evaluate(candidate: DesignCandidate, scenario: Dict[str, float]) -> Tuple[fl
 
 def sample_scenario(rng: random.Random) -> Dict[str, float]:
     fail_lo, fail_hi = MODEL_PARAMS["barrier_deployment_fail_range"]
+    fd, sc, wl = BUILDING_PROFILE["design_flood_depth_m"], BUILDING_PROFILE["masonry_shear_capacity_kN"], BUILDING_PROFILE["wall_length_m"]
     return {
-        "peak_depth_m": clamp(rng.gauss(BUILDING_PROFILE["design_flood_depth_m"], 0.35), 1.4, 3.5),
-        "shear_capacity_kN": clamp(rng.gauss(BUILDING_PROFILE["masonry_shear_capacity_kN"], 6.0), 24.0, 52.0),
+        # scatter and bounds are relative to the profile (σ 14 % / 15 % / 12.5 %, bounds 0.56–1.4 / 0.6–1.3 / 0.75–1.4 ×),
+        # which reproduces the original absolute values at the original profile (2.5 m, 40 kN, 2.0 m)
+        "peak_depth_m": clamp(rng.gauss(fd, 0.14 * fd), 0.56 * fd, 1.4 * fd),
+        "shear_capacity_kN": clamp(rng.gauss(sc, 0.15 * sc), 0.6 * sc, 1.3 * sc),
         "gamma_kN_m3": clamp(rng.gauss(BUILDING_PROFILE["flood_water_unit_weight_kN_m3"], 0.5), 8.5, 10.5),
-        "wall_length_m": clamp(rng.gauss(BUILDING_PROFILE["wall_length_m"], 0.25), 1.5, 2.8),
+        "wall_length_m": clamp(rng.gauss(wl, 0.125 * wl), 0.75 * wl, 1.4 * wl),
         "barrier_reliability": clamp(rng.gauss(0.87, 0.08), 0.5, 0.99),
         "deployment_fail_prob": rng.uniform(fail_lo, fail_hi),
         "soil_unit_weight_kN_m3": clamp(rng.gauss(BUILDING_PROFILE["soil_unit_weight_kN_m3"], 1.2), 16.0, 21.0),
@@ -388,8 +488,8 @@ def crossover(p1: DesignCandidate, p2: DesignCandidate, rng: random.Random) -> T
         c2.protection_height = a * p2.protection_height + (1 - a) * p1.protection_height
         c1.visual_impact_factor = b * p1.visual_impact_factor + (1 - b) * p2.visual_impact_factor
         c2.visual_impact_factor = b * p2.visual_impact_factor + (1 - b) * p1.visual_impact_factor
-    c1.protection_height = clamp(c1.protection_height, 0.0, 3.5)
-    c2.protection_height = clamp(c2.protection_height, 0.0, 3.5)
+    c1.protection_height = ph_gene(c1.protection_height)
+    c2.protection_height = ph_gene(c2.protection_height)
     c1.visual_impact_factor = clamp(c1.visual_impact_factor, 0.0, 1.0)
     c2.visual_impact_factor = clamp(c2.visual_impact_factor, 0.0, 1.0)
     return c1, c2
@@ -399,7 +499,7 @@ def mutate(c: DesignCandidate, rng: random.Random, rate: float = 0.18) -> None:
     if rng.random() < rate:
         c.intervention_strategy = rng.randint(0, 2)
     if rng.random() < rate:
-        c.protection_height = clamp(c.protection_height + rng.uniform(-0.5, 0.5), 0.0, 3.5)
+        c.protection_height = ph_gene(c.protection_height + rng.uniform(-0.5, 0.5))
     if rng.random() < rate:
         c.visual_impact_factor = clamp(c.visual_impact_factor + rng.uniform(-0.22, 0.22), 0.0, 1.0)
 
@@ -419,7 +519,7 @@ def sanity_check_population(population: List[DesignCandidate], rng: random.Rando
 
 def initialize_population(n: int, rng: random.Random) -> List[DesignCandidate]:
     return [
-        DesignCandidate(rng.randint(0, 2), rng.uniform(0.0, 3.5), rng.uniform(0.0, 1.0))
+        DesignCandidate(rng.randint(0, 2), ph_gene(rng.uniform(0.0, 3.5)), rng.uniform(0.0, 1.0))
         for _ in range(n)
     ]
 
@@ -758,7 +858,10 @@ def baseline_no_measures() -> Tuple[float, float, float]:
     for _ in range(40):
         s = sample_scenario(rng)
         d = s["peak_depth_m"]
-        force = hydrostatic_force_kN(d, wall_length=s["wall_length_m"], gamma=s["gamma_kN_m3"])
+        if FLOOD_DEMAND is not None:
+            force = FLOOD_DEMAND.demand(d, s["wall_length_m"], MODEL_PARAMS["include_earth_pressure"], -1)["total"]
+        else:
+            force = hydrostatic_force_kN(d, wall_length=s["wall_length_m"], gamma=s["gamma_kN_m3"])
         structural = 0.0 if force > s["shear_capacity_kN"] else clamp(100.0 * (1.0 - force / s["shear_capacity_kN"]), 0.0, 100.0)
         preservation = clamp(18.0 - 8.0 * max(0.0, d - 1.5), 0.0, 100.0)
         utility = clamp(10.0 - 3.0 * d, 0.0, 100.0)
@@ -772,6 +875,10 @@ def consultant_report(winner: DesignCandidate, baseline: Tuple[float, float, flo
     return (
         "\n=== Consultant Report ===\n"
         f"Building: {BUILDING_PROFILE['type']} in FEMA AE Zone\n"
+        + (f"Flood demand: ASCE 7-22 S2 — {FLOOD_DEMAND.case_name} (d_f {FLOOD_DEMAND.d_f:.2f} m, b_eff {FLOOD_DEMAND.b_eff:.2f} m, "
+           f"h_b {FLOOD_DEMAND.h_b:.2f} m)\n" if FLOOD_DEMAND is not None else "Flood demand: legacy hydrostatic ½γh² + Rankine soil\n")
+        + (f"Protection height pinned to the DFE: PH = d_f = {PH_FIXED:.2f} m\n" if PH_FIXED is not None else "")
+        + 
         f"Selected Strategy: {STRATEGY_NAMES[winner.intervention_strategy]}\n"
         f"Selected Genes: protection_height={winner.protection_height:.2f} m, visual_impact_factor={winner.visual_impact_factor:.2f}\n"
         f"Selected Objectives: Structural={ws:.1f}, Preservation={wp:.1f}, Utility={wu:.1f}\n"
@@ -789,6 +896,9 @@ def generate_visualizations(
     pareto_fronts: Dict[int, List[DesignCandidate]],
     populations: Dict[int, List[DesignCandidate]],
 ) -> List[str]:
+    if plt is None:
+        print("matplotlib not installed — skipping the figures (pip install matplotlib)")
+        return []
     out_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "visualizations")
     os.makedirs(out_dir, exist_ok=True)
     paths = []
@@ -832,6 +942,7 @@ def generate_visualizations(
 
 def run_multi_seed(
     seed_list: List[int],
+    generations: int = 300,
 ) -> Tuple[
     DesignCandidate,
     List[DesignCandidate],
@@ -844,7 +955,7 @@ def run_multi_seed(
     pareto_fronts = {}
     populations = {}
     for s in seed_list:
-        w, pop, h = run_moga(seed=s, population_size=50, generations=300)
+        w, pop, h = run_moga(seed=s, population_size=50, generations=generations)
         winners.append(w)
         history[s] = h
         pareto_fronts[s] = fast_non_dominated_sort(pop)[0]
