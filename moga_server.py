@@ -55,11 +55,12 @@ def run_engine(n_seeds: int, generations: int, profile: dict, flood: dict | None
 
     t0 = time.time()
     seeds = ALL_SEEDS[:n_seeds]
-    winners, fronts = [], {}
+    winners, fronts, history = [], {}, {}
     for s in seeds:
-        w, pop, _hist = m.run_moga(seed=s, population_size=50, generations=generations)
+        w, pop, hist = m.run_moga(seed=s, population_size=50, generations=generations)
         winners.append(w)
         fronts[s] = m.fast_non_dominated_sort(pop)[0]
+        history[s] = [{"g": h["generation"], "st": round(h["structural"], 2), "pr": round(h["preservation"], 2), "ut": round(h["utility"], 2)} for h in hist]
 
     consensus = max(winners, key=lambda c: min(c.objectives))
     points = [
@@ -86,6 +87,8 @@ def run_engine(n_seeds: int, generations: int, profile: dict, flood: dict | None
             "profile": profile,
         },
         "points": points,
+        "history": history,                                   # per-seed trajectory of the representative front point
+        "seed_winners": [m.winner_record(w) for w in winners],
         "winner": {
             "strategy": consensus.intervention_strategy,
             "strategy_name": m.STRATEGY_NAMES[consensus.intervention_strategy],

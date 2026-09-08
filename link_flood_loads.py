@@ -15,7 +15,10 @@ Link the MOGA surrogate of interactive_dashboard.html to the Flood Loads card (w
 - v5: depth sweep — ▶ RUN can run the engine at d = frac · d_f (PH pinned to d in each run); the 3D chart
   sizes the points by depth and stars the winner of every depth; a strip of chips shows Fa and the winner
   per depth and the tipping depth (first depth won by wet floodproofing).
-Idempotent: guarded by the LINK markers (v3 → v4 → v5 on an already-linked file). Run AFTER integrate_flood_section.py.
+- v6: the five static matplotlib panels (utility trajectories, decision envelope, three pairwise
+  projections) are redrawn live on canvas from the engine's response after a live run (history,
+  seed winners, Pareto points — coloured by depth in a sweep); the embedded PNGs stay until then.
+Idempotent: guarded by the LINK markers (v3 → v4 → v5 → v6 on an already-linked file). Run AFTER integrate_flood_section.py.
 usage: python3 link_flood_loads.py interactive_dashboard.html
 """
 import sys, re, shutil, datetime
@@ -23,6 +26,7 @@ import sys, re, shutil, datetime
 MARK = '/* FLOOD-LINK v3 */'
 MARK4 = '/* FLOOD-LINK v4 */'
 MARK5 = '/* FLOOD-LINK v5 */'
+MARK6 = '/* FLOOD-LINK v6 */'
 
 
 DRAW_SECTION = r"""        function drawSection(w, inp) {
@@ -172,13 +176,113 @@ def link_v5(s):
     return head + s
 
 
+LIVE_JS = r"""
+        // ── live redraw of the static MOGA panels (trajectories, envelope, pairwise) ─────────────   MARK6PLACEHOLDER
+        function livePanel(alt, id) {
+            const img = document.querySelector('img.simg[alt="' + alt + '"]'); if (!img) return null;
+            let c = document.getElementById(id);
+            if (!c) { c = document.createElement('canvas'); c.id = id; c.width = 640; c.height = 400; c.className = 'simg'; c.style.background = '#fff'; img.parentNode.insertBefore(c, img); }
+            img.style.display = 'none'; c.style.display = 'block'; return c;
+        }
+        function caption(c, txt) { const p = c && c.parentNode.querySelector('p'); if (p) p.textContent = txt; }
+        function axes2(ctx, W, H, m, xl, yl, xr, yr, title) {
+            ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1; ctx.strokeRect(m.l, m.t, W - m.l - m.r, H - m.t - m.b);
+            ctx.font = '600 11.5px Inter'; ctx.fillStyle = '#0f172a'; ctx.textAlign = 'left'; ctx.fillText(title, m.l, 18);
+            ctx.font = '500 10px Inter'; ctx.fillStyle = '#334155';
+            ctx.fillText(xl, (m.l + W - m.r) / 2, H - 8);
+            ctx.save(); ctx.translate(12, (m.t + H - m.b) / 2); ctx.rotate(-Math.PI / 2); ctx.fillText(yl, 0, 0); ctx.restore();
+            const X = v => m.l + (v - xr[0]) / (xr[1] - xr[0]) * (W - m.l - m.r), Y = v => H - m.b - (v - yr[0]) / (yr[1] - yr[0]) * (H - m.t - m.b);
+            ctx.strokeStyle = 'rgba(100,116,139,.15)'; ctx.font = '500 9px Inter'; ctx.fillStyle = '#64748b';
+            const tick = r => { const span = r[1] - r[0], st = span > 60 ? 20 : span > 25 ? 10 : span > 8 ? 5 : span > 3 ? 1 : 0.5; const a = []; for (let v = Math.ceil(r[0] / st) * st; v <= r[1] + 1e-9; v += st) a.push(+v.toFixed(2)); return a; };
+            for (const v of tick(xr)) { ctx.beginPath(); ctx.moveTo(X(v), m.t); ctx.lineTo(X(v), H - m.b); ctx.stroke(); ctx.textAlign = 'center'; ctx.fillText(v, X(v), H - m.b + 12); }
+            for (const v of tick(yr)) { ctx.beginPath(); ctx.moveTo(m.l, Y(v)); ctx.lineTo(W - m.r, Y(v)); ctx.stroke(); ctx.textAlign = 'right'; ctx.fillText(v, m.l - 4, Y(v) + 3); }
+            return { X, Y };
+        }
+        function legendTop(ctx, W, items) {   // small legend in the top strip, right-aligned
+            ctx.font = '500 9px Inter'; let x = W - 14;
+            for (const [col, txt] of items.slice().reverse()) { ctx.textAlign = 'right'; ctx.fillStyle = '#475569'; ctx.fillText(txt, x, 18); x -= ctx.measureText(txt).width + 6; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x - 3, 15, 3, 0, Math.PI * 2); ctx.fill(); x -= 14; }
+        }
+        function starAt(ctx, x, y, label) {
+            drawStar(ctx, x, y, 5, 9, 4); ctx.fillStyle = '#f59e0b'; ctx.fill(); ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1; ctx.stroke();
+            ctx.font = '700 9px Inter'; ctx.fillStyle = '#b45309'; ctx.textAlign = 'left'; ctx.fillText(label, x + 10, y + 3);
+        }
+        const SEEDC = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#4c72b0', '#dd8452', '#55a868', '#c44e52', '#8172b3', '#937860', '#da8bc3', '#8c8c8c', '#ccb974', '#64b5cd'];
+        function drawLivePanels(d) {
+            if (!d || !d.history) return;
+            const m = { l: 44, r: 14, t: 28, b: 30 }, sweepNote = d.sweep ? ' · at d_f = ' + d.d_f.toFixed(2) + ' m' : '';
+            // 1 · sweep: winner objectives vs flood depth (the tipping curve); single run: composite trajectories per seed
+            let c = livePanel('Conv', 'liveConv'); if (c && d.sweep) {
+                caption(c, 'Tipping curve — consensus winner per flood depth (live depth sweep)');
+                const ctx = c.getContext('2d'), sw = d.sweep, xr = [0, Math.max(...sw.map(r => r.d)) * 1.08];
+                const A = axes2(ctx, c.width, c.height, m, 'Flood depth d (m) — protection height pinned to d', 'Objective of the consensus winner', xr, [0, 100], 'Winner objectives vs flood depth · ' + (d.meta.profile && d.meta.profile.demand ? d.meta.profile.demand.replace('ASCE 7-22 S2 · ', '') : ''));
+                legendTop(ctx, c.width, [['#0f172a', 'composite'], ['#7c3aed', 'St'], ['#0d9488', 'Pr'], ['#ea580c', 'Ut']]);
+                if (xr[1] > 0.91) { ctx.fillStyle = 'rgba(217,119,6,.07)'; ctx.fillRect(A.X(0.91), m.t, A.X(xr[1]) - A.X(0.91), c.height - m.t - m.b); ctx.font = '500 8.5px Inter'; ctx.fillStyle = '#b45309'; ctx.textAlign = 'left'; ctx.fillText('debris impact required (d_f > 0.91 m, §5.3.9)', A.X(0.91) + 4, m.t + 12); }
+                if (d.tipping_depth) { ctx.setLineDash([4, 3]); ctx.strokeStyle = '#15803d'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(A.X(d.tipping_depth), m.t); ctx.lineTo(A.X(d.tipping_depth), c.height - m.b); ctx.stroke(); ctx.setLineDash([]); ctx.font = '700 9px Inter'; ctx.fillStyle = '#15803d'; ctx.textAlign = 'left'; ctx.fillText('dry → wet ' + d.tipping_depth.toFixed(2) + ' m', A.X(d.tipping_depth) + 4, c.height - m.b - 6); }
+                const series = [['#7c3aed', 0], ['#0d9488', 1], ['#ea580c', 2]];
+                for (const [col, k] of series) { ctx.strokeStyle = col; ctx.lineWidth = 1.2; ctx.globalAlpha = .7; ctx.beginPath(); sw.forEach((r, i) => i ? ctx.lineTo(A.X(r.d), A.Y(r.winner.objectives[k])) : ctx.moveTo(A.X(r.d), A.Y(r.winner.objectives[k]))); ctx.stroke(); ctx.globalAlpha = 1; }
+                ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2.2; ctx.beginPath(); sw.forEach((r, i) => { const v = Math.min(...r.winner.objectives); i ? ctx.lineTo(A.X(r.d), A.Y(v)) : ctx.moveTo(A.X(r.d), A.Y(v)); }); ctx.stroke();
+                sw.forEach(r => { const v = Math.min(...r.winner.objectives); ctx.beginPath(); ctx.arc(A.X(r.d), A.Y(v), 5.5, 0, Math.PI * 2); ctx.fillStyle = SC[r.winner.strategy]; ctx.fill(); ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1; ctx.stroke(); ctx.font = '600 8.5px Inter'; ctx.fillStyle = SC[r.winner.strategy]; ctx.textAlign = 'center'; ctx.fillText('S' + r.winner.strategy, A.X(r.d), A.Y(v) - 9); });
+            } else if (c) {
+                caption(c, 'Multi-seed composite trajectories (live run)');
+                const ctx = c.getContext('2d'), seeds = Object.keys(d.history), G = d.meta.generations;
+                const comp = h => Math.min(h.st, h.pr, h.ut);
+                const vals = seeds.flatMap(s => d.history[s].map(comp)), yr = [Math.max(0, Math.floor(Math.min(...vals) / 5) * 5 - 5), Math.min(100, Math.ceil(Math.max(...vals) / 5) * 5 + 5)];
+                const A = axes2(ctx, c.width, c.height, m, 'Generation', 'Composite = min(St, Pr, Ut) of the representative front point', [0, G], yr, 'Multi-Seed Composite Trajectories — live run' + sweepNote);
+                seeds.forEach((s, i) => { ctx.strokeStyle = SEEDC[i % SEEDC.length]; ctx.lineWidth = 1.2; ctx.globalAlpha = .85; ctx.beginPath(); d.history[s].forEach((h, k) => k ? ctx.lineTo(A.X(h.g), A.Y(comp(h))) : ctx.moveTo(A.X(h.g), A.Y(comp(h)))); ctx.stroke(); ctx.globalAlpha = 1; });
+                ctx.font = '500 9px Inter'; ctx.textAlign = 'left'; seeds.forEach((s, i) => { const col = Math.floor(i / 5), row = i % 5; ctx.fillStyle = SEEDC[i % SEEDC.length]; ctx.fillRect(c.width - 150 + col * 48, c.height - 110 + row * 13, 10, 3); ctx.fillStyle = '#475569'; ctx.fillText('Seed ' + s, c.width - 137 + col * 48, c.height - 106 + row * 13); });
+            }
+            // 2 · decision envelope: seed winners, structural vs utility, size = utility (as the original), colour = strategy;
+            //     in a sweep: the seed winners of every depth (size ∝ d), one star per depth
+            c = livePanel('Env', 'liveEnv'); if (c && d.seed_winners) {
+                caption(c, d.sweep ? 'Seed winners of every depth (live depth sweep)' : 'Decision envelope across seeds (live run)');
+                const ctx = c.getContext('2d');
+                const sw = d.sweep ? d.sweep.flatMap(r => r.seed_winners.map(w => ({ ...w, d: r.d }))) : d.seed_winners;
+                const xs = sw.map(w => w.objectives[0]), ys = sw.map(w => w.objectives[2]);
+                const pad = (a, p) => [Math.max(0, Math.min(...a) - p), Math.min(100, Math.max(...a) + p)];
+                const A = axes2(ctx, c.width, c.height, m, 'Structural', 'Utility', d.sweep ? [0, 100] : pad(xs, 3), d.sweep ? [0, 100] : pad(ys, 3), d.sweep ? 'Seed winners of every depth (size ∝ d)' : 'Decision envelope across seeds (size = utility)');
+                legendTop(ctx, c.width, [[SC[0], 'S0'], [SC[1], 'S1'], [SC[2], 'S2']]);
+                sw.forEach(w => { ctx.beginPath(); ctx.arc(A.X(w.objectives[0]), A.Y(w.objectives[2]), d.sweep ? 2 + 5 * Math.min(w.d / d.d_f, 1.3) : 4 + w.objectives[2] / 12, 0, Math.PI * 2); ctx.fillStyle = SC[w.strategy]; ctx.globalAlpha = .45; ctx.fill(); ctx.globalAlpha = 1; });
+                if (d.sweep) for (const r of d.sweep) { drawStar(ctx, A.X(r.winner.objectives[0]), A.Y(r.winner.objectives[2]), 5, 6, 3); ctx.fillStyle = SC[r.winner.strategy]; ctx.fill(); ctx.strokeStyle = '#0f172a'; ctx.lineWidth = .8; ctx.stroke(); ctx.font = '600 8.5px Inter'; ctx.fillStyle = '#334155'; ctx.textAlign = 'left'; ctx.fillText(r.d.toFixed(2) + ' m', A.X(r.winner.objectives[0]) + 8, A.Y(r.winner.objectives[2]) + 3); }
+                else starAt(ctx, A.X(d.winner.objectives[0]), A.Y(d.winner.objectives[2]), 'consensus S' + d.winner.strategy);
+            }
+            // 3–5 · pairwise projections of all Pareto points (colour = strategy; in a sweep, size and opacity grow with d)
+            const pairs = [['SP', 'liveSP', 'st', 'pr', 'Structural', 'Preservation'], ['SU', 'liveSU', 'st', 'ut', 'Structural', 'Utility'], ['PU', 'livePU', 'pr', 'ut', 'Preservation', 'Utility']];
+            for (const [alt, id, kx, ky, lx, ly] of pairs) {
+                c = livePanel(alt, id); if (!c) continue;
+                caption(c, lx + ' vs ' + ly + (d.sweep ? ' (live depth sweep)' : ' (live run)'));
+                const ctx = c.getContext('2d'), A = axes2(ctx, c.width, c.height, m, lx, ly, [0, 100], [0, 100], lx + ' vs ' + ly + (d.sweep ? ' (all depths, size ∝ d)' : ''));
+                for (const p of d.points) { ctx.beginPath(); ctx.arc(A.X(p[kx]), A.Y(p[ky]), d.sweep ? 1.5 + 2.5 * Math.min(p.d / d.d_f, 1.3) : 3, 0, Math.PI * 2); ctx.fillStyle = SC[p.s]; ctx.globalAlpha = d.sweep ? .18 + .5 * Math.min(p.d / d.d_f, 1) : .45; ctx.fill(); ctx.globalAlpha = 1; }
+                if (d.sweep) for (const r of d.sweep) { const o = { st: r.winner.objectives[0], pr: r.winner.objectives[1], ut: r.winner.objectives[2] }; drawStar(ctx, A.X(o[kx]), A.Y(o[ky]), 5, 5, 2.5); ctx.fillStyle = SC[r.winner.strategy]; ctx.fill(); ctx.strokeStyle = '#0f172a'; ctx.lineWidth = .7; ctx.stroke(); ctx.font = '600 8px Inter'; ctx.fillStyle = '#334155'; ctx.textAlign = 'left'; ctx.fillText(r.d.toFixed(2) + ' m', A.X(o[kx]) + 7, A.Y(o[ky]) - 4); }
+                const o = { st: d.winner.objectives[0], pr: d.winner.objectives[1], ut: d.winner.objectives[2] };
+                starAt(ctx, A.X(o[kx]), A.Y(o[ky]), 'S' + d.winner.strategy + ' (' + o[kx].toFixed(0) + ', ' + o[ky].toFixed(0) + ')');
+                legendTop(ctx, c.width, [[SC[0], 'S0'], [SC[1], 'S1'], [SC[2], 'S2']]);
+            }
+            document.querySelectorAll('h2 .src-badge.src-moga').forEach(b => { if (/MOGA · Python/.test(b.textContent) && !/live/.test(b.textContent)) b.textContent = '🧬 MOGA · Python · live run'; });
+        }
+"""
+
+
+def link_v6(s):
+    """Live redraw of the five static MOGA panels after a live run."""
+    s = sub1(s, "        // MOGA data embedded from the Python run (moga_pareto_data.json)\n",
+             LIVE_JS.replace('MARK6PLACEHOLDER', MARK6) + "\n        // MOGA data embedded from the Python run (moga_pareto_data.json)\n", 'live panels js')
+    s = sub1(s, "                mogaData = d; drawMoga3D();\n                const w = d.winner;\n",
+             "                mogaData = d; drawMoga3D(); drawLivePanels(d);\n                const w = d.winner;\n", 'live panels call')
+    s = sub1(s, "            <h2>MOGA Convergence & Pareto<span class=\"src-badge src-moga\">🧬 MOGA · Python</span></h2>\n",
+             "            <h2>MOGA Convergence & Pareto<span class=\"src-badge src-moga\">🧬 MOGA · Python</span></h2>\n"
+             "            <p class=\"sub\" style=\"margin-bottom:8px;font-size:.72rem\">Figures of the embedded full run (2026-08-19) until a live run: then these panels and the pairwise projections are redrawn from the engine's response (trajectories, seed winners, Pareto points — in a depth sweep, point size and opacity grow with d).</p>\n", 'live panels note')
+    return s
+
+
 def link(path):
     s = open(path, encoding='utf-8').read()
     if MARK in s:
-        if MARK5 in s:
+        if MARK6 in s:
             print('already linked'); return
         if MARK4 not in s: s = link_v4(s)
-        s = link_v5(s); open(path, 'w', encoding='utf-8').write(s); print('linked v4/v5', path); return
+        if MARK5 not in s: s = link_v5(s)
+        s = link_v6(s); open(path, 'w', encoding='utf-8').write(s); print('linked v4/v5/v6', path); return
     shutil.copy(path, path.replace('.html', f'_prelink_{datetime.date.today():%Y%m%d}.html'))
 
     # ---- top bar -------------------------------------------------------------------------------
@@ -272,6 +376,7 @@ def link(path):
              '                <span><span class="src-badge src-moga">🧬 MOGA Engine · Python</span>', 'src-note')
     s = link_v4(s)
     s = link_v5(s)
+    s = link_v6(s)
     open(path, 'w', encoding='utf-8').write(s)
     print('linked', path)
 

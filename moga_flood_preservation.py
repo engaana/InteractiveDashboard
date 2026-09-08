@@ -119,11 +119,12 @@ def run_depth_sweep(fracs: List[float], seeds: List[int], generations: int, prof
     for fr in fracs:
         d = round(fr * d_f, 3)
         apply_profile({**profile, "fd": d, "dfe": True}, flood_state)
-        winners, fronts = [], {}
+        winners, fronts, history = [], {}, {}
         for sd in seeds:
-            w, pop, _ = run_moga(seed=sd, population_size=50, generations=generations)
+            w, pop, hist = run_moga(seed=sd, population_size=50, generations=generations)
             winners.append(w)
             fronts[sd] = fast_non_dominated_sort(pop)[0]
+            history[sd] = [{"g": h["generation"], "st": round(h["structural"], 2), "pr": round(h["preservation"], 2), "ut": round(h["utility"], 2)} for h in hist]
         cons = max(winners, key=lambda c: min(c.objectives))
         Fa = FLOOD_DEMAND.demand(d, BUILDING_PROFILE["wall_length_m"], MODEL_PARAMS["include_earth_pressure"], -1)
         n0 = len(points)
@@ -131,13 +132,14 @@ def run_depth_sweep(fracs: List[float], seeds: List[int], generations: int, prof
             points.extend(candidate_point(sd, c, d=d, frac=fr) for c in front)
         sweep.append({"frac": fr, "d": d, "Fa": round(Fa["total"], 2), "Fa_parts": {k: round(v, 2) for k, v in Fa.items() if k != "total"},
                       "winner": winner_record(cons), "n_points": len(points) - n0,
-                      "seed_winners": [winner_record(w) for w in winners]})
+                      "seed_winners": [winner_record(w) for w in winners], "history": history})
         print(f"Sweep d = {d:.2f} m ({fr:.3g}·d_f): Fa = {Fa['total']:.1f} kN → S{cons.intervention_strategy} {STRATEGY_NAMES[cons.intervention_strategy]} "
               f"objectives={tuple(round(x, 1) for x in cons.objectives)}")
     # design-depth winner: the run closest to frac = 1
     ref = min(sweep, key=lambda r: abs(r["frac"] - 1.0))
     flip = next((r for r in sweep if r["winner"]["strategy"] == 2), None)
     return {"d_f": d_f, "sweep": sweep, "points": points, "winner": ref["winner"],
+            "history": ref["history"], "seed_winners": ref["seed_winners"],   # of the design-depth run
             "tipping_depth": flip["d"] if flip else None}
 
 

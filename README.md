@@ -93,6 +93,12 @@ of every depth, and a strip of chips shows Fa (with the debris share) and the wi
 command line: `run_and_export.py --flood pilot_flood_params.json --case 111 --sc 70 --depth-sweep
 0.25,0.5,0.75,1,1.25 --seeds 5 --gens 60 --tag pilot_LC2 --outdir pilot_runs`.
 
+After a live run the five matplotlib panels of the embedded run (*MOGA Convergence & Pareto* and
+*Pairwise Pareto Projections*) are redrawn on canvas from the engine's response — composite trajectories
+per seed, decision envelope, three pairwise projections; in a depth sweep the first panel becomes the
+**tipping curve** (winner objectives vs flood depth, debris threshold shaded, tipping depth marked) and the
+envelope shows the seed winners of every depth. The PNGs of the 2026-08-19 run stay until the first live run.
+
 ## Strategies and objectives
 
 Three intervention strategies — **S0** dry floodproofing (sealant/coating), **S1** dry
